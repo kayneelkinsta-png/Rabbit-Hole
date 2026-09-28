@@ -1667,7 +1667,7 @@ document.querySelectorAll('#rules .lv button').forEach(b => b.addEventListener('
 
 function openWorld(T){
   const L = $('#loading'); L.querySelector('.msg').textContent = 'populating your world…'; L.querySelector('.sub').textContent = T.title; L.classList.add('on');
-  wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
+  wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); if (!introPlaying) setTimeout(showAbout, 500); /* the "What is" card always comes first (after the intro, when that plays) */ } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
 }
 function startIntro(){
   if (introPlaying) return;
