@@ -1819,8 +1819,8 @@ tourTip.querySelector('.back').onclick = () => { if (tourI > 0) tourShow(tourI -
 TT.addEventListener('click', e => { if (e.target.closest('.tip')) return; if (TOUR[tourI].go && tourPick && Math.hypot(e.clientX - tourPick.p.x, e.clientY - tourPick.p.y) < Math.max(tourPick.p.r * 1.4, 30)) tourNext(); });
 addEventListener('resize', () => { if (tourOn) tourShow(tourI); });
 let seenIntro = false; try { seenIntro = !!localStorage.getItem('rh-intro-seen'); } catch (e) {}
-// first visit: the intro, then what Rabbit Hole is, then the tour. ?intro plays it again
-if (/[?&]intro\b/.test(location.search) || !seenIntro) startIntro();
+// every start: the intro, then what Rabbit Hole is, then (if chosen) the tour
+startIntro();   // the intro opens every start (it's skippable), then the "What is" card
 Promise.race([langReady, new Promise(r => setTimeout(r, 2500))]).then(() => document.fonts.load('20px "Patrick Hand"')).finally(() => { openWorld(randomWorld()); frame(); });
 setTimeout(() => $('#hint').classList.add('gone'), 14000);
 window.__rh = { nextRound, prepareRound, isDry, cam, game, get cur(){ return cur; }, get stack(){ return stack; }, topic, tick, run(n){ for (let i = 0; i < n; i++) tick(); return { cur: cur && cur.name, depth: stack.length, s: +cam.s.toFixed(4), next: cur && nextOf(cur) && nextOf(cur).title, status: cur && cur.status }; }, choose, hit };
