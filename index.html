@@ -1714,6 +1714,8 @@ $('#langBtn').onclick = e => { e.stopPropagation(); $('#langList').classList.tog
 $('#langList').addEventListener('click', e => { const b = e.target.closest('button[data-l]'); if (!b) return; $('#langList').classList.remove('on'); setLang(b.getAttribute('data-l')); });
 addEventListener('pointerdown', e => { if (!e.target.closest('#langWrap')) $('#langList').classList.remove('on'); });
 applyStrings();
+// on the live site, a service worker makes sure updates arrive on the next open, even from the home screen
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 /* ─────────── what is Rabbit Hole, and a short tour ─────────── */
 const touchy = matchMedia('(pointer:coarse)').matches;
