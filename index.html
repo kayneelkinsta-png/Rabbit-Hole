@@ -1066,8 +1066,16 @@ function drawBox(css){ strokeSet(COLOUR ? BOX.colourArt : BOX.art, css); ctx.fil
 /* ─────────── falling ─────────── */
 /* ─────────── arriving: the world's name floats in ─────────── */
 let arriveT = 0;
+// the welcome card never sits on top of an open tile (like the game's goal); it waits until the tile closes
+let arriveLater = null;
+new MutationObserver(() => {
+  if (!arriveLater || document.getElementById('card').classList.contains('on')) return;
+  const [T, k] = arriveLater; arriveLater = null;
+  if (T === cur) setTimeout(() => arrive(T, k), 250);
+}).observe(document.getElementById('card'), { attributes: true, attributeFilter: ['class'] });
 function arrive(T, kicker = 'welcome to'){
   if (!T || T.box) return;
+  if (document.getElementById('card').classList.contains('on')){ arriveLater = [T, kicker]; return; }
   const a = document.getElementById('arrive');
   a.querySelector('.k').textContent = kicker;
   a.querySelector('.t').textContent = T.name;
@@ -1511,7 +1519,7 @@ async function startGame(opts = {}){
   Object.assign(game, { on: true, over: false, glow: cfg.glow, route, start: route[0], goal: route[route.length - 1], par: cfg.par, allowed: cfg.par + cfg.spare, used: 0, daily, picks: [], how: null, clue: !!cfg.clue, noPic: !!cfg.noPic, climbCost: !!cfg.climbCost });
   document.body.classList.add('playing'); setIcon('gameBtn', 'stop', 'give up');
   cv.classList.add('swap'); await new Promise(r => setTimeout(r, 280));
-  stack = []; cur = game.start; cam.s = fitS(); cam.phi = spinGoal = 0; falling = diving = false; $('#fall').classList.remove('on'); arrive(cur);
+  stack = []; cur = game.start; cam.s = fitS(); cam.phi = spinGoal = 0; falling = diving = false; $('#fall').classList.remove('on'); arriveLater = [cur, 'welcome to'];   // shown once the goal tile is closed
   requestAnimationFrame(() => cv.classList.remove('swap'));
   moved(); if (game.clue) openClue(); else openCard(game.goal.title, 'your goal');
 }
