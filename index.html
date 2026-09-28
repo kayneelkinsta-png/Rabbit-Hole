@@ -1795,8 +1795,6 @@ const TOUR = [
       tourTip.querySelector('p').textContent = t('tileD'); tourTip.querySelector('.next').textContent = t('next');
       setTimeout(() => { if (!tourCard) return; const r = card.getBoundingClientRect(); if (r.width) spotAt(r.left + r.width / 2, r.top + r.height / 2, r.width + 14, r.height + 14, false); }, 380);
     } },
-  { title: () => t('followT'), text: () => t('followD', { name: tourPick ? tourPick.h.it.title.replace(/ \(.*\)$/, '') : t('thatWorld') }),
-    show(){ const r = clamp(cur.RH * cam.s * 1.25, 46, Math.min(W, H) * .3); spotAt(CX, CY, r * 2, r * 2); touchy ? showPinch(CX, CY, r) : showHold(CX, CY); } },
   { title: () => t('toolsT'), text: () => t('toolsD'), next: () => t('startExploring'),
     show(){
       const b = $('#btns').getBoundingClientRect();
@@ -1807,6 +1805,7 @@ const TOUR = [
     } }
 ];
 let tourCard = false;   // the tile the tour opened, closed again as soon as you move on
+new MutationObserver(() => { if (tourOn && tourCard && !card.classList.contains('on')){ tourCard = false; tourNext(); } }).observe(document.getElementById('card'), { attributes: true, attributeFilter: ['class'] });
 function tourShow(i){
   if (tourCard){ card.classList.remove('on'); tourCard = false; } TT.classList.remove('pass');
   stopAnims(); tourI = i; const st = TOUR[i]; st.done = false;
