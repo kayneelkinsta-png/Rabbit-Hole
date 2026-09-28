@@ -1,0 +1,16 @@
+{
+  "name": "Rabbit Hole",
+  "short_name": "Rabbit Hole",
+  "description": "Fall down a rabbit hole, on purpose. Every world is a Wikipedia article; every orb is a door to another.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05070f",
+  "theme_color": "#0b0f1e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
