@@ -22,7 +22,7 @@ const T = { wordsIn: 0, swirl: 1.3, titleIn: 2.1, titleOut: 4.9, dive: 4.9, flas
 // things people love to fall down rabbit holes about
 const EXTRA = ['Albert Einstein', 'Marie Curie', 'William Shakespeare', 'Mona Lisa', 'Ludwig van Beethoven', 'Photosynthesis', 'DNA', 'Solar System', 'Milky Way', 'Ancient Rome', 'Atlantis', 'Dragon', 'Unicorn', 'Kraken', 'Titanic', 'Apollo 11', 'Wright brothers', 'Internet', "Rubik's Cube", 'Olympic Games', 'Surfing', 'Tsunami', 'Amazon River', 'Nile', 'Sahara', 'Antarctica', 'Iceland', 'Mongolia', 'Petra', 'Angkor Wat', 'Taj Mahal', 'Eiffel Tower', 'Statue of Liberty', 'Sydney Opera House', 'Galápagos Islands', 'Grand Canyon', 'Mariana Trench', 'Vanilla', 'Saffron', 'Gold', 'Diamond', 'Meteorite', 'Comet', 'Jupiter', 'Neptune', 'International Space Station', 'Hubble Space Telescope', 'Pterosaur', 'Woolly mammoth', 'Great white shark', 'Axolotl', 'Platypus', 'Red panda', 'Firefly', 'Bioluminescence', 'Fossil', 'Gravity', 'Magnetism', 'Electricity', 'Opera', 'Hip hop', 'Animation', 'Poetry', 'Greek mythology', 'Fairy tale', 'Knight', 'Ninja', 'Astronaut', 'Fireworks', 'Paper plane', 'Northern lights', 'Pompeii', 'Easter Island', 'Terracotta Army', 'Rosetta Stone', 'Tutankhamun', 'Cleopatra', 'Genghis Khan', 'Ada Lovelace', 'Isaac Newton', 'Charles Darwin', 'Frida Kahlo', 'Vincent van Gogh', 'The Beatles', 'Hedy Lamarr', 'Nikola Tesla', 'Sherlock Holmes', 'Alice in Wonderland', 'Stradivarius', 'Venus flytrap', 'Giant squid', 'Emperor penguin', 'Monarch butterfly', 'Sloth', 'Narwhal', 'Honeycomb', 'Quicksand', 'Geyser', 'Stalactite', 'Eclipse', 'Supernova', 'Saturn V', 'Mount Fuji', 'Bermuda Triangle', 'Loch Ness Monster', 'Crop circle', 'Morse code', 'Enigma machine', 'Abacus', 'Sundial', 'Hourglass', 'Samurai', 'Pirate', 'Treasure', 'Ice age', 'Stone Age', 'Aztecs', 'Maya civilization', 'Inca Empire', 'Ancient Egypt', 'Colosseum', 'Machu Picchu'];
 
-export async function playIntro({ titles = [], onReveal = () => {}, onDone = () => {} } = {}) {
+export async function playIntro({ titles = [], strings = {}, onReveal = () => {}, onDone = () => {} } = {}) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { onReveal(); onDone(); return; }
   const phone = matchMedia('(pointer:coarse)').matches || innerWidth < 760;
 
@@ -43,9 +43,10 @@ export async function playIntro({ titles = [], onReveal = () => {}, onDone = () 
     #rhIntro .title p{margin:18px 0 0;font:600 clamp(10px,1.6vw,13px)/1 -apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;letter-spacing:.48em;text-indent:.48em;text-transform:uppercase;color:rgba(226,232,255,.78)}
     @keyframes rhShine{0%{background-position:100% 0}100%{background-position:-50% 0}}
     #rhIntro .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 52%,#ffffff 0%,#e3eaff 20%,#8ea6ff 46%,rgba(30,40,110,.9) 74%,#0b0f1e 100%);opacity:0;pointer-events:none}
-  </style><button class="skip" type="button">Skip intro</button><div class="title"><h1>Rabbit Hole</h1><p>a world to discover</p></div><div class="flash"></div>`;
+  </style><button class="skip" type="button"></button><div class="title"><h1>Rabbit Hole</h1><p></p></div><div class="flash"></div>`;
   document.body.appendChild(root);
   const skipBtn = root.querySelector('.skip'), titleEl = root.querySelector('.title'), flash = root.querySelector('.flash');
+  skipBtn.textContent = strings.skip || 'Skip intro'; titleEl.querySelector('p').textContent = strings.tagline || 'a world to discover';
 
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 1.75));
@@ -67,7 +68,9 @@ export async function playIntro({ titles = [], onReveal = () => {}, onDone = () 
   }).catch(() => {});
 
   // ---------- the words ----------
-  const names = [...new Set([...titles, ...EXTRA].map(t => t.replace(/ \(.*\)$/, '')))].sort(() => Math.random() - .5).slice(0, phone ? 170 : 240);
+  // in another language, only its own titles (the English extras would look out of place)
+  const pool = document.documentElement.lang && document.documentElement.lang !== 'en' && titles.length > 20 ? titles : [...titles, ...EXTRA];
+  const names = [...new Set(pool.map(t => t.replace(/ \(.*\)$/, '')))].sort(() => Math.random() - .5).slice(0, phone ? 170 : 240);
   const atlas = wordAtlas(names);
   const N = atlas.rects.length, R_MAX = 9.5;
   const base = new THREE.PlaneGeometry(1, 1);
