@@ -103,6 +103,16 @@ body.glass #card .k{color:#fff}
 #card .row button,#card .row a{font:inherit;font-size:18px;padding:4px 12px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
 #card .row button:first-child{background:var(--ink);color:#fff}
 #card .x{position:absolute;right:8px;top:2px;border:0;background:none;font:inherit;font-size:26px;cursor:pointer}
+/* the corner exit: the same on every panel, big enough for a fingertip */
+.cx,body.glass #card .x{position:absolute;right:8px;top:8px;width:40px;height:40px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;font:400 26px/1 -apple-system,"Segoe UI",system-ui,sans-serif;opacity:.85;cursor:pointer;z-index:3;pointer-events:auto}
+.cx:hover,body.glass #card .x:hover{opacity:1;background:rgba(255,255,255,.18)}
+body.glass #card .k{padding-right:40px}
+#arrive .cx{top:6px;right:6px;width:34px;height:34px;font-size:22px}
+#arrive:not(.on) .cx{pointer-events:none}
+#enter .cx{position:fixed;top:calc(14px + env(safe-area-inset-top));right:16px}
+#result,#loading{padding-top:22px}
+#tour .tourX{position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:60;background:rgba(12,16,32,.75);border:1px solid rgba(255,255,255,.25)}
+#pre .preSkip{position:absolute;right:16px;top:calc(14px + env(safe-area-inset-top));font:500 13px/1 -apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:9px 15px;cursor:pointer;pointer-events:auto;opacity:0;animation:preIn .6s ease .4s forwards}
 #rules .x{position:absolute;right:10px;top:8px;width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;opacity:.75;font:inherit;font-size:26px;line-height:1;cursor:pointer}
 #rules .x:hover{opacity:1;background:rgba(255,255,255,.1)}
 #modes{right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;transition:opacity .7s}
@@ -403,7 +413,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
 </style>
 </head>
 <body class="glass">
-<div id="pre" aria-hidden="true"><i></i></div>
+<div id="pre"><i></i><button class="preSkip" type="button" data-i="skipIntro">Skip intro</button></div>
 <canvas id="c"></canvas>
 <div id="scrimTop" class="scrim"></div><div id="scrimBot" class="scrim"></div>
 <div id="top" class="ui">
@@ -433,7 +443,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="modes3"><button id="aboutGame" type="button"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg><span data-i="modeGame">Game play</span></button><button id="aboutFree" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.5 13.5 8.4 15.6 10.5 10.5z"/></svg><span data-i="modeFree">Free roam</span></button><button id="aboutTour" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg><span data-i="modeTutorial">Tutorial</span></button></div>
   <div class="agains"><button id="aboutIntro" class="again" type="button" data-i="watchIntro">&#9654; watch the intro again</button><a id="aboutFeedback" class="again" target="_blank" rel="noopener" data-i="feedback" hidden>&#9998; tell us what you think</a></div>
   <p class="credits" data-i="credits">Articles and pictures from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) &middot; 3D by <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> &middot; light from <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> (CC0)</p>
-  <p class="build">version 29 Sep · 11</p>
+  <p class="build">version 29 Sep · 12</p>
 </div>
 <div id="reader" class="gone" role="dialog" aria-label="Article">
   <header><button class="home" type="button" data-i="readerHome">&#8249; Rabbit Hole</button><button class="prev" type="button" aria-label="Previous article" hidden>&#8592;</button><div class="t"></div><a class="ext" target="_blank" rel="noopener">wikipedia.org &#8599;</a></header>
@@ -446,6 +456,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="dot d1"></div><div class="dot d2"></div>
   <svg class="hand" viewBox="0 0 48 58" aria-hidden="true"><path d="M20 2a4 4 0 0 1 4 4v19h2.5a4 4 0 0 1 3.8 2.8 4 4 0 0 1 5.2 2.9 4 4 0 0 1 5.5 3.6V45c0 7.2-5.8 12-13 12h-4.3c-4.4 0-7.6-1.9-10.2-5.5L6.3 42a3.6 3.6 0 0 1 5.6-4.6L16 41V6a4 4 0 0 1 4-4z"/></svg>
   <div class="tags"></div>
+  <button class="cx tourX" type="button" aria-label="End the tutorial">&times;</button>
   <div class="tip"><div class="n"></div><h3></h3><p></p><div class="row"><button class="skip" type="button" data-i="skip">Skip</button><span class="nav"><button class="back" type="button" data-i="back">Back</button><button class="next" type="button">Next</button></span></div></div>
 </div>
 <div id="rules" class="ui sk"><button id="rulesClose" class="x" type="button" aria-label="Close">&times;</button>
@@ -460,15 +471,15 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="guide"><span class="tab">level guide</span><p class="lvnote"></p></div>
   <div class="row"><button id="go" class="sk dark">start</button><button id="daily" class="sk">today's challenge</button></div>
 </div>
-<div id="enter" class="gone" aria-live="polite"><div class="box"><div class="orb"><div class="ring"></div><img alt=""></div><div class="k" data-i="entering">entering</div><h2></h2><p class="d"></p><div class="st"></div></div></div>
+<div id="enter" class="gone" aria-live="polite"><button class="cx" type="button" aria-label="Close">&times;</button><div class="box"><div class="orb"><div class="ring"></div><img alt=""></div><div class="k" data-i="entering">entering</div><h2></h2><p class="d"></p><div class="st"></div></div></div>
 <div id="fbSheet" hidden><div class="panel"><div class="bar"><button class="back" type="button" aria-label="Back to Rabbit Hole">&#8249; Rabbit Hole</button><span data-i="fbTitle">Feedback</span><button class="x" type="button" aria-label="Close">&times;</button></div><iframe title="Feedback form" loading="lazy"></iframe></div></div>
 <div id="homeAsk" hidden><div class="box"><h3 data-i="homeT">You're in a game</h3><p data-i="homeD">Return to home? This round will end.</p><div class="row"><button class="keep" type="button" data-i="homeKeep">Keep playing</button><button class="leave" type="button" data-i="homeLeave">Return to home</button></div></div></div>
-<div id="arrive" class="ui"><div class="k"></div><div class="t"></div><div class="d"></div></div>
-<div id="result" class="ui sk"><h2></h2><p class="msg"></p><p class="route"></p><div class="row share"><button id="copyRes" class="sk">copy result</button><button id="saveCard" class="sk">save card</button></div><div class="row"><button id="again" class="sk dark">play again</button><button id="free" class="sk">just discover</button></div></div>
+<div id="arrive" class="ui"><button class="cx" type="button" aria-label="Close">&times;</button><div class="k"></div><div class="t"></div><div class="d"></div></div>
+<div id="result" class="ui sk"><button class="cx" type="button" aria-label="Close">&times;</button><h2></h2><p class="msg"></p><p class="route"></p><div class="row share"><button id="copyRes" class="sk">copy result</button><button id="saveCard" class="sk">save card</button></div><div class="row"><button id="again" class="sk dark">play again</button><button id="free" class="sk">just discover</button></div></div>
 <div id="btns" class="ui" role="toolbar" aria-label="Controls"><button id="gameBtn" title="the game" aria-label="Game"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg></button><button id="dice" title="start in a random world" aria-label="Random world"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="15" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><circle cx="9" cy="15" r="1.2" fill="currentColor"/></svg></button><span class="sep"></span><button id="up" title="climb up" aria-label="Climb up"><svg viewBox="0 0 24 24"><path d="M12 20V5M6 11l6-6 6 6"/></svg></button><button id="fall" title="fall in" aria-label="Fall in"><svg viewBox="0 0 24 24"><path d="M12 4v15M6 13l6 6 6-6"/></svg></button><span class="sep"></span><button id="sound" title="sound" aria-label="Sound on or off"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></button><button id="helpBtn" title="how to move around" aria-label="Help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor"/></svg></button></div>
 <div id="tip" class="ui sk"></div>
 <div id="card" class="ui sk"><button class="x" aria-label="Close">×</button><div class="k"></div><div class="path" dir="auto" hidden></div><img alt="" hidden><h2 dir="auto"></h2><div class="d" dir="auto"></div><div class="row"><button id="cardDig">enter world ↓</button><a id="cardWiki" target="_blank" rel="noopener" data-i="read">read the article</a></div><p></p></div>
-<div id="loading" class="ui sk"><div class="spin"></div><div class="msg"></div><div class="sub"></div></div>
+<div id="loading" class="ui sk"><button class="cx" type="button" aria-label="Close">&times;</button><div class="spin"></div><div class="msg"></div><div class="sub"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
 <script>
 'use strict';
@@ -514,8 +525,20 @@ const memo = new Map();
 // remember answers, but never a failure: the next ask tries again
 const once = (k, f) => { if (!memo.has(k)) memo.set(k, f().catch(() => { memo.delete(k); return null; })); return memo.get(k); };
 // a tile's text: the article's opening, a paragraph or two, long enough to be worth reading and short enough for a tile
+// pronunciation and native-script asides "(… [ɕoːɡɯɴ] …)" are noise on a tile: drop any bracket holding one
+function dropAsides(p){
+  let out = '', i = 0;
+  while (i < p.length){
+    if (p[i] === '('){
+      let d = 0, j = i; for (; j < p.length; j++){ if (p[j] === '(') d++; else if (p[j] === ')' && --d === 0) break; }
+      if (j < p.length && /\[|\/[^\s\/]{2,}\/|pronounced|pronunciation|listen|IPA\b|ə|^\(\s*[,;]/i.test(p.slice(i, j + 1))){ out = out.replace(/\s+$/, ''); i = j + 1; continue; }
+    }
+    out += p[i++];
+  }
+  return out.replace(/\s+([,.;:])/g, '$1').replace(/ {2,}/g, ' ');
+}
 function trimLead(text){
-  const ps = String(text || '').split(/\n+/).map(x => x.replace(/\s*\(\s*[;,]?\s*\)/g, '').trim()).filter(Boolean);
+  const ps = String(text || '').split(/\n+/).map(x => dropAsides(x.replace(/\s*\(\s*[;,]?\s*\)/g, '')).trim()).filter(Boolean);
   let out = ps[0] || '';
   for (let i = 1; i < ps.length && out.length < 380; i++) out += '\n\n' + ps[i];
   if (out.length > 820){ const cut = Math.max(out.lastIndexOf('. ', 820), out.lastIndexOf('。', 820)); if (cut > 250) out = out.slice(0, cut + 1); }
@@ -1716,9 +1739,11 @@ async function startGame(opts = {}){
   const slot = nextRound[key] || prepareRound(daily, game.level);
   if (!daily) delete nextRound[key];
   if (!slot.route){ say(daily ? "loading today's challenge…" : 'populating your starting world…', 'nearly there'); L.classList.add('on'); }
+  const myStart = ++gameStartTok;
   const route = slot.route || await slot.promise;
   L.classList.remove('on');
   if (!daily) setTimeout(() => prepareRound(false, game.level), 2500);
+  if (myStart !== gameStartTok) return;   // closed with the corner exit while it loaded
   if (!route){ $('#now').innerHTML = `<div class="w">${esc(cur.name)}</div><div class="n">couldn't set a goal just now, try again</div>`; return; }
   for (const T of TOPICS.values()){ T.next = 0; T.jump = null; T.picked = false; }
   Object.assign(game, { on: true, over: false, glow: cfg.glow, route, start: route[0], goal: route[route.length - 1], par: cfg.par, allowed: cfg.par + cfg.spare, used: 0, daily, picks: [], how: null, clue: !!cfg.clue, noPic: !!cfg.noPic, climbCost: !!cfg.climbCost });
@@ -1842,10 +1867,22 @@ function openWorld(T){
   wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); primeImgs(T); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); if (!introPlaying) setTimeout(() => showAbout(true), 500); /* the "What is" card always comes first (after the intro, when that plays) */ } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
 }
 // the glowing ring shown before the intro can draw: fade it once the intro is on screen (or can't be)
+// the corner exits
+let gameStartTok = 0;
+function wireExits(){
+  $('#arrive .cx').onclick = () => $('#arrive').classList.remove('on');
+  $('#result .cx').onclick = () => exitGame();
+  $('#loading .cx').onclick = () => { $('#loading').classList.remove('on'); gameStartTok++; showNow(); };
+  $('#enter .cx').onclick = () => { enterTok++; const E = $('#enter'); E.classList.remove('on'); setTimeout(() => E.classList.add('gone'), 450); };
+  $('#tour .tourX').onclick = () => endTour();
+  $('#pre .preSkip').onclick = () => { window.rhSkipIntro = true; const sk = document.querySelector('#rhIntro .skip'); if (sk) sk.click(); dropPre(); };
+}
+wireExits();
 function dropPre(){ const p = $('#pre'); if (!p || p.classList.contains('out')) return; p.classList.add('out'); setTimeout(() => p.remove(), 1000); }
 setTimeout(dropPre, 12000);   // never leave it up, whatever happens
 function startIntro(){
   if (introPlaying) return;
+  window.rhSkipIntro = false;
   const introMod = import('./intro.js');
   aboutAuto = false;   // each intro is followed by the card, once
   introPlaying = true; document.body.classList.add('introplay');
@@ -1856,7 +1893,7 @@ function startIntro(){
     try { localStorage.setItem('rh-intro-seen', '1'); } catch (e) {}
     setTimeout(() => showAbout(true), 1100);   // the card always follows the intro
   };
-  Promise.all([introMod, Promise.race([langReady, sleep(1500)])]).then(([m]) => m.playIntro({ titles: WORLDS_L, strings: { skip: t('skipIntro'), tagline: t('tagline') }, onReveal: done })).catch(e => { console.error(e); done(); });
+  Promise.all([introMod, Promise.race([langReady, sleep(1500)])]).then(([m]) => window.rhSkipIntro ? done() : m.playIntro({ titles: WORLDS_L, strings: { skip: t('skipIntro'), tagline: t('tagline') }, onReveal: done })).catch(e => { console.error(e); done(); });
 }
 $('#replayIntro').onclick = startIntro;
 

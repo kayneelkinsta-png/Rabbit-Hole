@@ -47,6 +47,7 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
   document.body.appendChild(root);
   const skipBtn = root.querySelector('.skip'), titleEl = root.querySelector('.title'), flash = root.querySelector('.flash');
   skipBtn.textContent = strings.skip || 'Skip intro'; titleEl.querySelector('p').textContent = strings.tagline || 'a world to discover';
+  skipBtn.onclick = () => { window.rhSkipIntro = true; };   // a tap while the scene is still being built skips as soon as it starts
 
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 1.75));
@@ -166,7 +167,7 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
   // keys only count once the Skip button is showing, so a stray Enter from the address bar doesn't end it
   const onKey = e => { if (t > 1 && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) skip(); };
   addEventListener('keydown', onKey);
-  setTimeout(() => skipBtn.style.opacity = 1, 900);
+  setTimeout(() => skipBtn.style.opacity = 1, 150);   // the way out is there from the start
   window.__intro = { get t() { return t; }, seek(v, h = false) { t = v; hold = h; }, run() { hold = false; }, camera, T };
 
   function reveal() {
@@ -188,6 +189,7 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
     const now = performance.now(); let dt = (now - last) / 1000; last = now;
     if (!(dt > 0)) dt = 1 / 60; else if (dt > .1) dt = .1;   // slow devices keep roughly to time
     if (!hold) t += dt;
+    if (window.rhSkipIntro && !skipping) skip();   // skipped from the page's waiting screen before this could take the tap
     wordsMat.uniforms.uT.value = t;
     well.material.uniforms.uT.value = t;
     well.material.uniforms.uDeep.value = ease(seg(t, T.dive + .6, T.flash));
