@@ -246,6 +246,7 @@ body.glass #modes .link{background:none !important;border:0;color:#fff !importan
 #about .again[hidden]{display:none}
 #about .again{display:block;margin:16px 0 0;text-decoration:none;font:inherit;font-size:12.5px;background:none;border:0;color:rgba(255,255,255,.55);cursor:pointer;padding:0}
 #about .again:hover,#about .link:hover{opacity:1;color:#fff}
+#about .build{margin:6px 0 0;font-size:10px;letter-spacing:.06em;color:rgba(255,255,255,.3)}   /* which copy a tester is on */
 #about .credits{margin:12px 0 0;font-size:11px;line-height:1.4;color:rgba(255,255,255,.42)}
 #about .credits a{color:rgba(255,255,255,.6);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.2)}
 body.onboard #modes{opacity:0 !important;pointer-events:none !important}
@@ -404,6 +405,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="modes3"><button id="aboutGame" type="button"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg><span data-i="modeGame">Game play</span></button><button id="aboutFree" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.5 13.5 8.4 15.6 10.5 10.5z"/></svg><span data-i="modeFree">Free roam</span></button><button id="aboutTour" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg><span data-i="modeTutorial">Tutorial</span></button></div>
   <div class="agains"><button id="aboutIntro" class="again" type="button" data-i="watchIntro">&#9654; watch the intro again</button><a id="aboutFeedback" class="again" target="_blank" rel="noopener" data-i="feedback" hidden>&#9998; tell us what you think</a></div>
   <p class="credits" data-i="credits">Articles and pictures from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) &middot; 3D by <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> &middot; light from <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> (CC0)</p>
+  <p class="build">version 29 Sep · 5</p>
 </div>
 <div id="reader" class="gone" role="dialog" aria-label="Article">
   <header><button class="home" type="button" data-i="readerHome">&#8249; Rabbit Hole</button><button class="prev" type="button" aria-label="Previous article" hidden>&#8592;</button><div class="t"></div><a class="ext" target="_blank" rel="noopener">wikipedia.org &#8599;</a></header>
@@ -795,10 +797,10 @@ function wantImg(it){ if (it.img !== 'no' || !it.thumb) return; it.img = 'queued
 function pruneImg(){ const now = performance.now(); for (let i = imgQueue.length - 1; i >= 0; i--) if (now - (imgQueue[i].seen || 0) > 2500){ imgQueue[i].img = 'no'; imgQueue.splice(i, 1); } }
 // a new world's biggest orbs get their photos fetched while it's still being revealed, so they're there when it appears
 function primeImgs(T, n = 48){ const now = performance.now(); T.items.slice(0, n).forEach((it, k) => { it.lastPx = Math.max(it.lastPx || 0, 60 - k); it.seen = now; wantImg(it); }); }
-function pumpImg(){ pruneImg(); while (imgBusy < 16 && imgQueue.length){ let bi = 0; for (let i = 1; i < imgQueue.length; i++) if ((imgQueue[i].lastPx || 0) > (imgQueue[bi].lastPx || 0)) bi = i; const it = imgQueue.splice(bi, 1)[0]; imgBusy++; it.img = 'loading';
+function pumpImg(){ pruneImg(); while (imgBusy < 24 && imgQueue.length){ let bi = 0; for (let i = 1; i < imgQueue.length; i++) if ((imgQueue[i].lastPx || 0) > (imgQueue[bi].lastPx || 0)) bi = i; const it = imgQueue.splice(bi, 1)[0]; imgBusy++; it.img = 'loading';
     // a photo Wikipedia is slow to produce lets the next one start after a moment, and still appears when it arrives
     let held = true; const free = () => { if (held){ held = false; imgBusy--; pumpImg(); } }; const slow = setTimeout(free, 2500);
-    loadImg(it.thumb).catch(() => loadImg(it.thumb.replace(/\/\d+px-/, '/120px-'))).then(img => { it.bmp = { raw: img, width: img.naturalWidth, height: img.naturalHeight }; it.img = 'done'; }).catch(() => { it.img = 'fail'; }).finally(() => { clearTimeout(slow); free(); }); } }
+    loadImg(it.thumb).catch(() => loadImg(it.thumb.replace(/\/\d+px-/, '/120px-'))).then(img => { it.bmp = { raw: img, width: img.naturalWidth, height: img.naturalHeight }; it.img = 'done'; it.shown = performance.now(); }).catch(() => { it.img = 'fail'; }).finally(() => { clearTimeout(slow); free(); }); } }
 
 /* ─────────── drawing ─────────── */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -880,7 +882,7 @@ function drawTopic(T, s, depth){
   if (child){
     if (hp > 20) want(child);
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, RHt, 0, 7); ctx.clip();
-    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
+    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 80).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
     if (child.status === 'ready' && depth < 4 && frameBudget-- > 0) drawTopic(child, s / T.K, depth + 1);
     else {
       ctx.setTransform(M); const g = ctx.createRadialGradient(0, 0, 0, 0, 0, RHt); g.addColorStop(0, '#111'); g.addColorStop(1, '#555'); ctx.fillStyle = g; ctx.fillRect(-RHt, -RHt, RHt * 2, RHt * 2);
@@ -1045,7 +1047,7 @@ function drawGlass(T, s, depth){
   for (const it of T.items){
     const px = it.r * s; if (px < 1.2) continue;
     if (Math.hypot(it.x, it.y) - it.r * 2 > vis) continue;
-    it.lastPx = px; it.seen = performance.now(); if (px * BUMP() > DOT - 4) wantImg(it);
+    it.lastPx = px; it.seen = performance.now(); if (px * BUMP() > 4) wantImg(it);   // a little ahead of need, so zooming in finds photos waiting (the biggest still go first)
     if (px * BUMP() < DOT){ const a = clamp((px * BUMP() - 2) / (DOT - 2), .25, 1); ctx.globalAlpha = .35 + .45 * a; ctx.fillStyle = it === nx ? '#ffffff' : (it.wash || '#cfd8ff'); ctx.beginPath(); ctx.arc(it.x, it.y, it.r * BUMP() * (.35 + .25 * a), 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
     const isGoal = game.on && game.glow && game.goal && it.title === game.goal.title;
     glassOrb(it, s, M, bg, pal, now, it === nx, it === hovered, isGoal);
@@ -1076,7 +1078,7 @@ function drawGlass(T, s, depth){
   ctx.fillStyle = '#05060c'; ctx.fillRect(-RHt, -RHt, RHt * 2, RHt * 2);
   if (child){
     if (hp > 20) want(child);
-    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
+    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 80).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
     if (child.status === 'ready' && doorO > .01 && depth < 4 && frameBudget-- > 0) drawTopic(child, s / T.K, depth + 1);
   }
   ctx.setTransform(M);
@@ -1116,12 +1118,14 @@ function glassOrb(it, s, M, bg, pal, now, isNext, isHover, isGoal){
   if (isHover || isNext || isGoal){ ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = isGoal ? .75 + .25 * Math.sin(now * 4) : .6; ctx.drawImage(halo(isGoal ? '#ffd76a' : isNext ? '#ffffff' : bg[2]), x - r * 2.1, y - r * 2.1, r * 4.2, r * 4.2); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
   ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip();
   const raw = it.bmp && it.bmp.raw;
-  if (raw && px > 10){ const iw = raw.naturalWidth, ih = raw.naturalHeight, sw = Math.min(iw, ih); ctx.drawImage(raw, (iw - sw) / 2, (ih - sw) / 2, sw, sw, x - r, y - r, r * 2, r * 2); }
-  else {
+  // photos fade in over a quarter second rather than popping in
+  const fade = raw && px > 10 ? Math.min(1, (performance.now() - (it.shown || 0)) / 260) : 0;
+  if (fade < 1){
     ctx.fillStyle = it.gl.g4; ctx.fillRect(x - r, y - r, r * 2, r * 2);
     if (px > 14){ ctx.save(); ctx.translate(x - r * .5, y - r * .6); ctx.scale(r * .01, r * .01); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.stroke(GP[it.kind]); ctx.restore(); ctx.setTransform(M); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip(); }
     if (px > 22) wantImg(it);
   }
+  if (fade > 0){ const iw = raw.naturalWidth, ih = raw.naturalHeight, sw = Math.min(iw, ih); ctx.globalAlpha = fade; ctx.drawImage(raw, (iw - sw) / 2, (ih - sw) / 2, sw, sw, x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; }
   ctx.fillStyle = it.gl.g1; ctx.fillRect(x - r, y - r, r * 2, r * 2);
   ctx.fillStyle = it.gl.g2; ctx.fillRect(x - r, y - r, r * 2, r * 2);
   ctx.restore(); ctx.setTransform(M);
@@ -1597,7 +1601,7 @@ const isDry = it => DRY_TITLE.test(it.title) || DRY_DESC.test(it.desc || '');
 const dayKey = () => new Date().toISOString().slice(0, 10);
 const SITE = 'https://kayneelkinsta-png.github.io/Rabbit-Hole/';   // where shared results send people
 const FEEDBACK_URL = '';   // Kayne's feedback form (Tally); the link on the "What is" card stays hidden until this is set
-const GOAT = '';           // Kayne's GoatCounter code; the visitor counter stays off until this is set
+const GOAT = 'rabbithole'; // Kayne's GoatCounter code (stats at rabbithole.goatcounter.com); empty turns the counter off
 // count a moment worth knowing about (never anything typed, never who): shows up as an event in GoatCounter
 const track = name => { try { if (window.goatcounter && goatcounter.count) goatcounter.count({ path: name, title: name, event: true }); } catch (e) {} };
 async function buildRound(cfg, rnd = Math.random, say = () => {}){
