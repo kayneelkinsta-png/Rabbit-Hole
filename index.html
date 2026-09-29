@@ -160,6 +160,18 @@ body.glass #card img{filter:none;border:0;border-radius:12px}
 #rules .lv button{margin:0;padding:9px 4px 8px;font-size:16px;line-height:1.15;text-align:center;min-width:0}
 #rules .lv button small{margin-top:3px;font-size:11.5px}
 @media (max-width:480px){#rules .lv{grid-template-columns:repeat(2,1fr)}}
+/* how deep: one slider from gentle to crazy */
+#rules .depth{margin:14px 0 0}
+#rules .dhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+#rules .dname{font-size:20px;font-weight:700}
+#rules .dstat{font-size:14px;color:rgba(255,255,255,.75)}
+#rules .ends{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+#depth{-webkit-appearance:none;appearance:none;width:100%;height:32px;margin:6px 0 0;background:transparent;cursor:pointer;--p:33%}
+#depth::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#7fd3ff,#b58cff var(--p),rgba(255,255,255,.16) var(--p))}
+#depth::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#7fd3ff,#b58cff var(--p),rgba(255,255,255,.16) var(--p))}
+#depth::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-9px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 0 4px rgba(181,140,255,.35)}
+#depth::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#fff;border:0;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 0 4px rgba(181,140,255,.35)}
+#depth:focus-visible{outline:2px solid rgba(255,255,255,.6);outline-offset:4px;border-radius:8px}
 #rules .guide{position:relative;margin:20px 0 16px;padding:15px 16px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16)}
 #rules .guide .tab{position:absolute;left:14px;top:-10px;padding:3px 10px 2px;border-radius:999px;background:#1b2142;border:1px solid rgba(255,255,255,.22);font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.78)}
 #rules .guide .lvnote{margin:0}
@@ -443,7 +455,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="modes3"><button id="aboutGame" type="button"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg><span data-i="modeGame">Game play</span></button><button id="aboutFree" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.5 13.5 8.4 15.6 10.5 10.5z"/></svg><span data-i="modeFree">Free roam</span></button><button id="aboutTour" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg><span data-i="modeTutorial">Tutorial</span></button></div>
   <div class="agains"><button id="aboutIntro" class="again" type="button" data-i="watchIntro">&#9654; watch the intro again</button><a id="aboutFeedback" class="again" target="_blank" rel="noopener" data-i="feedback" hidden>&#9998; tell us what you think</a></div>
   <p class="credits" data-i="credits">Articles and pictures from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) &middot; 3D by <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> &middot; light from <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> (CC0) &middot; sound by <a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a></p>
-  <p class="build">version 29 Sep · 18</p>
+  <p class="build">version 29 Sep · 19</p>
 </div>
 <div id="reader" class="gone" role="dialog" aria-label="Article">
   <header><button class="home" type="button" data-i="readerHome">&#8249; Rabbit Hole</button><button class="prev" type="button" aria-label="Previous article" hidden>&#8592;</button><div class="t"></div><a class="ext" target="_blank" rel="noopener">wikipedia.org &#8599;</a></header>
@@ -467,7 +479,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
     <li>Each jump uses up one of your clicks, so choose carefully.</li>
     <li>Spot your goal's orb and click it to win. There's no search, and climbing back up doesn't give clicks back.</li>
   </ol>
-  <div class="lv"><button data-lv="explorer">explorer<small>7–10</small></button><button data-lv="adventurer" class="on">adventurer<small>11–15</small></button><button data-lv="scholar">scholar<small>16+</small></button><button data-lv="mastermind">mastermind<small>the brave</small></button></div>
+  <div class="depth"><div class="dhead"><span class="dname">Classic</span><span class="dstat"></span></div><input type="range" id="depth" min="1" max="10" step="1" value="4" aria-label="How deep the goal hides"><div class="ends"><span>gentle</span><span>crazy</span></div></div>
   <div class="guide"><span class="tab">level guide</span><p class="lvnote"></p></div>
   <div class="row"><button id="go" class="sk dark">start</button><button id="daily" class="sk">today's challenge</button></div>
 </div>
@@ -731,13 +743,33 @@ function halo(col){
 }
 let hovered = null;
 // the game: get from a start topic to a goal topic within a budget of clicks
-const game = { on: false, over: false, level: 'adventurer', glow: false, goal: null, start: null, route: [], par: 0, allowed: 0, used: 0 };
-const GAME_LEVELS = {
-  explorer:   { par: 3, spare: 5, glow: true, kids: true, note: 'For younger players, about 7 to 10. The goal is 3 worlds away and you get 8 clicks. Every stop is something you can picture, like animals, fruit, food and films, and the goal glows gold whenever it is on screen.' },
-  adventurer: { par: 4, spare: 3, glow: false, note: 'About 11 to 15. The goal is 4 worlds away and you get 7 clicks. No hints.' },
-  scholar:    { par: 6, spare: 2, glow: false, clue: true, rank: [4, 18], note: "16 and up. 6 worlds away, 8 clicks, and a less famous goal. You won't be told its name: just a clue and a blurred picture." },
-  mastermind: { par: 8, spare: 1, glow: false, clue: true, noPic: true, climbCost: true, rank: [10, 34], note: 'For the brave. 8 worlds away with only 1 spare click. An obscure goal, a clue with no picture, and climbing back up costs a click.' }
-};
+const game = { on: false, over: false, level: 4, glow: false, goal: null, start: null, route: [], par: 0, allowed: 0, used: 0 };
+// one slider, gentle to crazy: how far the goal hides, how many clicks you get, and how much help you have
+const DEPTHS = [null,
+  { par: 2, spare: 4, glow: true, kids: true },                                   // 1 gentle
+  { par: 3, spare: 5, glow: true, kids: true },                                   // 2 easy
+  { par: 3, spare: 4 },                                                           // 3
+  { par: 4, spare: 3 },                                                           // 4 classic (today's challenge)
+  { par: 5, spare: 3 },                                                           // 5
+  { par: 6, spare: 2, clue: true, rank: [4, 18] },                                // 6
+  { par: 8, spare: 3, clue: true, rank: [6, 24] },                                // 7
+  { par: 10, spare: 3, clue: true, rank: [8, 28] },                               // 8
+  { par: 12, spare: 4, clue: true, noPic: true, rank: [10, 34] },                 // 9
+  { par: 16, spare: 5, clue: true, noPic: true, climbCost: true, rank: [10, 34] } // 10 crazy: 21 clicks
+];
+const DEPTH_NAMES = [, 'Gentle', 'Easy', 'Steady', 'Classic', 'Tricky', 'Mystery', 'Deep', 'Deeper', 'Very deep', 'Crazy'];
+const GAME_LEVELS = {}; DEPTHS.forEach((d, i) => { if (d) GAME_LEVELS[i] = d; }); GAME_LEVELS.adventurer = DEPTHS[4];
+function depthNote(c){
+  const bits = [];
+  if (c.kids) bits.push('Every stop is something you can picture, like animals, fruit, food and films.');
+  if (c.glow) bits.push('The goal glows gold whenever it is on screen.');
+  if (!c.clue) bits.push("You'll see your goal before you start.");
+  else bits.push(c.noPic ? 'Your goal is a mystery: just a clue, no picture.' : 'Your goal is a mystery: a clue and a blurred picture.');
+  if (c.rank) bits.push('It will be something less famous.');
+  if (c.climbCost) bits.push('Climbing back up costs a click.');
+  if (c.par >= 10) bits.push('A goal this deep takes a moment to hide.');
+  return bits.join(' ');
+}
 const SEEDS = ['Tomato', 'Moon', 'Octopus', 'Volcano', 'Chocolate', 'Jazz', 'Ancient Egypt', 'Bicycle', 'Honey bee', 'Piracy', 'Tea', 'Lighthouse', 'Dinosaur', 'Castle', 'Coffee', 'Samurai', 'Rainforest', 'Penguin', 'Pizza', 'Telescope', 'Vikings', 'Coral reef', 'Hot air balloon', 'Origami', 'Chess', 'Circus', 'Cheese', 'Glacier', 'Printing press', 'Butterfly'];
 const WORLDS = [...new Set([...SEEDS, 'Aurora', 'Black hole', 'Great Barrier Reef', 'Mount Everest', 'Amazon rainforest', 'Honey', 'Saturn', 'Tardigrade', 'Silk Road', 'Leonardo da Vinci', 'Machu Picchu', 'Great Wall of China', 'Venice', 'Kite', 'Mushroom', 'Rainbow', 'Mars', 'Tyrannosaurus', 'Blue whale', 'Sushi', 'Maple syrup', 'Bread', 'Violin', 'Piano', 'Ballet', 'Lego', 'Robot', 'Submarine', 'Steam engine', 'Paper', 'Silk', 'Salt', 'Spice trade', 'Potato', 'Banana', 'Owl', 'Elephant', 'Giraffe', 'Jellyfish', 'Cave', 'Desert', 'Tornado', 'Lightning', 'Snowflake', 'Earthquake', 'Sphinx', 'Colosseum', 'Stonehenge', 'Ice cream', 'Dragonfly', 'Sunflower', 'Bamboo', 'Chameleon', 'Hummingbird', 'Wolf', 'Bonsai', 'Kimono', 'Totem pole', 'Hieroglyph', 'Compass'])];
 // explorer rounds start somewhere a young player knows: fruit, animals, food, films, toys
@@ -1783,7 +1815,8 @@ async function buildRound(cfg, rnd = Math.random, say = () => {}){
       if (cfg.kids) cands = cands.filter(kidStop);
       else if (last){ const things = cands.filter(it => it.kind !== 'idea'); if (things.length >= 4) cands = things; }
       // young players get the best-known of those; everyone else a wider pick
-      const ranked = await byReaders(cands), pool = last && cfg.rank ? ranked.slice(cfg.rank[0], cfg.rank[1]) : cfg.kids ? ranked.slice(0, last ? 4 : 6) : ranked.slice(0, last ? 5 : 10);
+      const ranked = await byReaders(cands); let pool = last && cfg.rank ? ranked.slice(cfg.rank[0], cfg.rank[1]) : cfg.kids ? ranked.slice(0, last ? 4 : 6) : ranked.slice(0, last ? 5 : 10);
+      if (!pool.length) pool = ranked.slice(0, 10);
       let chosen = null;
       for (let tries = 0; tries < 3 && pool.length && !chosen; tries++){
         const Tc = await ready(topic(pool.splice(Math.floor(rnd() * pool.length), 1)[0].title));
@@ -1805,7 +1838,7 @@ function prepareRound(daily = false, level = game.level){
   const key = roundKey(daily, level);
   if (nextRound[key]) return nextRound[key];
   const cfg = daily ? GAME_LEVELS.adventurer : GAME_LEVELS[level], slot = nextRound[key] = { route: null };
-  slot.promise = buildRound(cfg, daily ? rng(hash('rabbit-hole-' + dayKey())) : Math.random)
+  slot.promise = buildRound(cfg, daily ? rng(hash('rabbit-hole-' + dayKey())) : Math.random, (m, sub) => { slot.msg = m; slot.sub = sub; })
     .then(r => { slot.route = r; if (!r) delete nextRound[key]; return r; })
     .catch(() => { delete nextRound[key]; return null; });
   return slot;
@@ -1823,8 +1856,9 @@ async function startGame(opts = {}){
   if (!daily) delete nextRound[key];
   if (!slot.route){ say(daily ? "loading today's challenge…" : 'populating your starting world…', 'nearly there'); L.classList.add('on'); }
   const myStart = ++gameStartTok;
+  const progress = setInterval(() => { if (slot.msg) say(slot.msg, slot.sub); }, 300);   // deep goals take a while: show how far the digging has got
   const route = slot.route || await slot.promise;
-  L.classList.remove('on');
+  clearInterval(progress); L.classList.remove('on');
   if (!daily) setTimeout(() => prepareRound(false, game.level), 2500);
   if (myStart !== gameStartTok) return;   // closed with the corner exit while it loaded
   if (!route){ $('#now').innerHTML = `<div class="w">${esc(cur.name)}</div><div class="n">couldn't set a goal just now, try again</div>`; return; }
@@ -1941,9 +1975,17 @@ $('#helpBtn').onclick = () => { const h = $('#howto'); h.classList.toggle('gone'
 $('#again').onclick = () => { $('#result').classList.remove('on'); openRules(); };
 $('#free').onclick = exitGame;
 $('#gameBtn').onclick = () => { if ($('#rules').classList.contains('on')) return $('#rules').classList.remove('on'); if (game.on && !game.over) endGame('gave'); else { exitGame(); openRules(); } };
-document.querySelectorAll('#rules .lv button').forEach(b => b.onclick = () => { game.level = b.dataset.lv; document.querySelectorAll('#rules .lv button').forEach(x => x.classList.toggle('on', x === b)); $('#rules .lvnote').textContent = GAME_LEVELS[game.level].note; });
-$('#rules .lvnote').textContent = GAME_LEVELS.adventurer.note;
-document.querySelectorAll('#rules .lv button').forEach(b => b.addEventListener('click', () => prepareRound(false, b.dataset.lv)));
+// the depth slider: shows what each notch means as you drag, remembers your choice, and starts building that round once you let go
+const depthEl = $('#depth');
+function showDepth(){
+  const n = game.level, c = GAME_LEVELS[n];
+  $('#rules .dname').textContent = DEPTH_NAMES[n]; $('#rules .dstat').textContent = `${c.par} worlds away · ${c.par + c.spare} clicks`;
+  $('#rules .lvnote').textContent = depthNote(c); depthEl.style.setProperty('--p', ((n - 1) / 9 * 100) + '%');
+}
+try { const v = +localStorage.getItem('rh-depth'); if (v >= 1 && v <= 10) game.level = v; } catch (e) {}
+depthEl.value = game.level; showDepth();
+depthEl.addEventListener('input', () => { if (+depthEl.value === game.level) return; game.level = +depthEl.value; showDepth(); SFX.tap(); });
+depthEl.addEventListener('change', () => { try { localStorage.setItem('rh-depth', game.level); } catch (e) {} prepareRound(false, game.level); });
 
 function openWorld(T){
   const L = $('#loading'); L.querySelector('.msg').textContent = 'populating your world…'; L.querySelector('.sub').textContent = T.title; L.classList.add('on');
