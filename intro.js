@@ -162,7 +162,7 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
 
   // ---------- run ----------
   let t = 0, last = performance.now(), revealed = false, skipping = false, hold = false, handed = false;
-  const skip = () => { if (skipping || revealed) return; skipping = true; titleEl.classList.add('out'); flash.style.transition = 'opacity .3s ease'; flash.style.opacity = 1; setTimeout(reveal, 320); };
+  const skip = () => { if (skipping || revealed) return; skipping = true; window.rhSkipIntro = true; titleEl.classList.add('out'); flash.style.transition = 'opacity .3s ease'; flash.style.opacity = 1; setTimeout(reveal, 320); };
   skipBtn.onclick = skip;
   // keys only count once the Skip button is showing, so a stray Enter from the address bar doesn't end it
   const onKey = e => { if (t > 1 && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) skip(); };

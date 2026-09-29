@@ -443,7 +443,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="modes3"><button id="aboutGame" type="button"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg><span data-i="modeGame">Game play</span></button><button id="aboutFree" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.5 13.5 8.4 15.6 10.5 10.5z"/></svg><span data-i="modeFree">Free roam</span></button><button id="aboutTour" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg><span data-i="modeTutorial">Tutorial</span></button></div>
   <div class="agains"><button id="aboutIntro" class="again" type="button" data-i="watchIntro">&#9654; watch the intro again</button><a id="aboutFeedback" class="again" target="_blank" rel="noopener" data-i="feedback" hidden>&#9998; tell us what you think</a></div>
   <p class="credits" data-i="credits">Articles and pictures from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) &middot; 3D by <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> &middot; light from <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> (CC0) &middot; sound by <a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a></p>
-  <p class="build">version 29 Sep · 14</p>
+  <p class="build">version 29 Sep · 16</p>
 </div>
 <div id="reader" class="gone" role="dialog" aria-label="Article">
   <header><button class="home" type="button" data-i="readerHome">&#8249; Rabbit Hole</button><button class="prev" type="button" aria-label="Previous article" hidden>&#8592;</button><div class="t"></div><a class="ext" target="_blank" rel="noopener">wikipedia.org &#8599;</a></header>
@@ -973,6 +973,7 @@ function newMote(anywhere){
   const arm = Math.floor(Math.random() * 3) * 2.094, a = arm - Math.log(r / R0) * 2.4 + (Math.random() - .5) * 1.6;
   return { r, a, z: .4 + Math.random(), tw: Math.random() * 6.28, col: gold ? '#ffd9a0' : cyan ? '#bff3ff' : '#c9d6ff', age: anywhere ? 1 : 0 };
 }
+const TAU = Math.PI * 2;
 function drawSwirl(M, s){
   const now = performance.now() / 1000, dt = CALM ? 0 : Math.min(.05, now - (swirlT || now)); swirlT = now;
   if (R0 * s > halfDiag() * 1.02) return;          // the world fills the screen: nothing around it to see
@@ -988,7 +989,7 @@ function drawSwirl(M, s){
   // the ring of light at the mouth of the hole, breathing gently, as at the end of the intro
   const ringR = R0 * (1.02 + .006 * Math.sin(now * 3)), ring = ctx.createRadialGradient(0, 0, R0 * .97, 0, 0, R0 * 1.32);
   ring.addColorStop(0, 'rgba(150,175,255,0)'); ring.addColorStop(.1, 'rgba(160,185,255,.34)'); ring.addColorStop(.35, 'rgba(110,135,255,.12)'); ring.addColorStop(1, 'rgba(90,110,255,0)');
-  ctx.globalAlpha = fade; ctx.fillStyle = ring; ctx.beginPath(); ctx.arc(0, 0, R0 * 1.32, 0, 7); ctx.arc(0, 0, ringR * .97, 0, 7, true); ctx.fill();
+  ctx.globalAlpha = fade; ctx.fillStyle = ring; ctx.beginPath(); ctx.arc(0, 0, R0 * 1.32, 0, TAU); ctx.arc(0, 0, ringR * .97, 0, TAU, true); ctx.fill();   // exact full turns: a reversed arc to "7" stops short and leaves a dark wedge
   const grow = W <= 760 ? 1.3 : 1;
   for (let i = 0; i < SWIRL.length; i++){
     const m = SWIRL[i], k = m.r / R0;
@@ -1036,7 +1037,7 @@ function drawDoor(key, lines, R, s, o, now){
     if (ctx.createConicGradient){
       const k = ctx.createConicGradient(now * .25 + tw, 0, 0);
       ['#ff9ad5', '#9ad5ff', '#b5ff9a', '#ffe39a', '#c69aff', '#ff9ad5'].forEach((c, j) => k.addColorStop(j / 5, c));
-      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.arc(0, 0, a, 0, 7, true); ctx.clip();
+      ctx.save(); ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.arc(0, 0, a, 0, TAU, true); ctx.clip();
       ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = .55; ctx.fillStyle = k; ctx.fillRect(-R, -R, R * 2, R * 2);
       ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.restore();
     }
@@ -1093,7 +1094,7 @@ function drawGlass(T, s, depth){
   if (top){   // the space the world floats in: dark, faintly tinted by the world, with the world's shadow beneath it
     ctx.fillStyle = '#090c1a'; ctx.fillRect(-span, -span, span * 2, span * 2);
     ctx.globalAlpha = .3; ctx.drawImage(halo(bg[1]), -R0 * 2.3, -R0 * 2.3, R0 * 4.6, R0 * 4.6);
-    ctx.globalAlpha = .75; ctx.drawImage(halo('#000000'), -R0 * 1.02, R0 * .78, R0 * 2.04, R0 * .5); ctx.globalAlpha = 1;
+    ctx.save(); ctx.rotate(cam.phi); ctx.globalAlpha = .75; ctx.drawImage(halo('#000000'), -R0 * 1.02, R0 * .78, R0 * 2.04, R0 * .5); ctx.globalAlpha = 1; ctx.restore();   // always beneath, however the world is spun
     drawSwirl(M, s);
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, R0, 0, 7); ctx.clip();
   }
@@ -1106,7 +1107,7 @@ function drawGlass(T, s, depth){
   if (top){   // a glass rim, lit from the top left, so the world reads as an object
     ctx.restore(); ctx.setTransform(M);
     const rim = ctx.createLinearGradient(-R0, -R0, R0, R0); rim.addColorStop(0, 'rgba(255,255,255,.95)'); rim.addColorStop(.45, 'rgba(255,255,255,.18)'); rim.addColorStop(1, bg[2]);
-    ctx.strokeStyle = rim; ctx.lineWidth = clamp(3 * css, 1.5, 4) / css; ctx.beginPath(); ctx.arc(0, 0, R0, 0, 7); ctx.stroke();
+    ctx.save(); ctx.rotate(cam.phi); ctx.strokeStyle = rim; ctx.lineWidth = clamp(3 * css, 1.5, 4) / css; ctx.beginPath(); ctx.arc(0, 0, R0, 0, 7); ctx.stroke(); ctx.restore();
     ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .18; ctx.lineWidth = clamp(14 * css, 4, 18) / css; ctx.strokeStyle = bg[2]; ctx.beginPath(); ctx.arc(0, 0, R0 * 1.01, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
   if (T.box) drawGlassBox(css, bg, now);
@@ -1162,7 +1163,7 @@ function drawGlass(T, s, depth){
   ctx.restore(); ctx.setTransform(M);
   // glass lip around the portal
   const lip = ctx.createLinearGradient(-RHt, -RHt, RHt, RHt); lip.addColorStop(0, 'rgba(255,255,255,.95)'); lip.addColorStop(.5, 'rgba(255,255,255,.25)'); lip.addColorStop(1, bg[2]);
-  ctx.strokeStyle = lip; ctx.lineWidth = clamp(4 * css, 1.5, 5) / css; ctx.beginPath(); ctx.arc(0, 0, RHt, 0, 7); ctx.stroke();
+  ctx.save(); ctx.rotate(cam.phi); ctx.strokeStyle = lip; ctx.lineWidth = clamp(4 * css, 1.5, 5) / css; ctx.beginPath(); ctx.arc(0, 0, RHt, 0, 7); ctx.stroke(); ctx.restore();
   if (top){
     const grey = smooth01(mn * .26, mn * .5, hp);
     if (grey > .01){
@@ -1176,34 +1177,37 @@ function drawGlass(T, s, depth){
 }
 const BUMP = () => W <= 760 ? 1.24 : 1.06, DOT = 13;   // below DOT css px a bubble is shown as a soft dot
 function glassOrb(it, s, M, bg, pal, now, isNext, isHover, isGoal){
-  const x = it.x, y = it.y, r = it.r * BUMP(), px = r * s;
-  if (!it.gl || it.glR !== r){ it.glR = r;   // gradients are fixed in the world's coordinates, so they're built once and reused every frame
-    const g1 = ctx.createRadialGradient(x - r * .3, y - r * .38, r * .05, x, y, r * 1.02); g1.addColorStop(0, 'rgba(255,255,255,.32)'); g1.addColorStop(.42, 'rgba(255,255,255,.05)'); g1.addColorStop(.82, 'rgba(0,0,0,.06)'); g1.addColorStop(1, 'rgba(0,0,0,.38)');
-    const g2 = ctx.createRadialGradient(x + r * .12, y + r * .72, 0, x + r * .12, y + r * .72, r * .8); g2.addColorStop(0, 'rgba(255,255,255,.4)'); g2.addColorStop(1, 'rgba(255,255,255,0)');
-    const g3 = ctx.createLinearGradient(x, y - r * .72, x, y - r * .3); g3.addColorStop(0, 'rgba(255,255,255,.9)'); g3.addColorStop(1, 'rgba(255,255,255,0)');
-    const g4 = ctx.createLinearGradient(x - r, y - r, x + r, y + r); g4.addColorStop(0, it.wash); g4.addColorStop(1, bg[1]);
+  // each orb is drawn in its own upright frame, so its light, shadow and photo stay put when the world is spun
+  const r = it.r * BUMP(), px = r * s;
+  ctx.setTransform(M); ctx.translate(it.x, it.y); ctx.rotate(cam.phi); const L = ctx.getTransform();
+  if (!it.gl || it.glR !== r){ it.glR = r;   // gradients are built around the orb's own centre once, and reused every frame
+    const g1 = ctx.createRadialGradient(-r * .3, -r * .38, r * .05, 0, 0, r * 1.02); g1.addColorStop(0, 'rgba(255,255,255,.32)'); g1.addColorStop(.42, 'rgba(255,255,255,.05)'); g1.addColorStop(.82, 'rgba(0,0,0,.06)'); g1.addColorStop(1, 'rgba(0,0,0,.38)');
+    const g2 = ctx.createRadialGradient(r * .12, r * .72, 0, r * .12, r * .72, r * .8); g2.addColorStop(0, 'rgba(255,255,255,.4)'); g2.addColorStop(1, 'rgba(255,255,255,0)');
+    const g3 = ctx.createLinearGradient(0, -r * .72, 0, -r * .3); g3.addColorStop(0, 'rgba(255,255,255,.9)'); g3.addColorStop(1, 'rgba(255,255,255,0)');
+    const g4 = ctx.createLinearGradient(-r, -r, r, r); g4.addColorStop(0, it.wash); g4.addColorStop(1, bg[1]);
     it.gl = { g1, g2, g3, g4 };
   }
-  // shadow beneath, and a halo when it matters
-  ctx.globalAlpha = .5; ctx.drawImage(halo('#000000'), x - r * 1.15 + r * .08, y - r * 1.15 + r * .24, r * 2.3, r * 2.3); ctx.globalAlpha = 1;
-  if (isHover || isNext || isGoal){ ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = isGoal ? .75 + .25 * Math.sin(now * 4) : .6; ctx.drawImage(halo(isGoal ? '#ffd76a' : isNext ? '#ffffff' : bg[2]), x - r * 2.1, y - r * 2.1, r * 4.2, r * 4.2); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
-  ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip();
+  // shadow beneath (light from the top left of the screen), and a halo when it matters
+  ctx.globalAlpha = .5; ctx.drawImage(halo('#000000'), -r * 1.15 + r * .08, -r * 1.15 + r * .24, r * 2.3, r * 2.3); ctx.globalAlpha = 1;
+  if (isHover || isNext || isGoal){ ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = isGoal ? .75 + .25 * Math.sin(now * 4) : .6; ctx.drawImage(halo(isGoal ? '#ffd76a' : isNext ? '#ffffff' : bg[2]), -r * 2.1, -r * 2.1, r * 4.2, r * 4.2); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.clip();
   const raw = it.bmp && it.bmp.raw;
   // photos fade in over a quarter second rather than popping in
   const fade = raw && px > 10 ? Math.min(1, (performance.now() - (it.shown || 0)) / 260) : 0;
   if (fade < 1){
-    ctx.fillStyle = it.gl.g4; ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    if (px > 14){ ctx.save(); ctx.translate(x - r * .5, y - r * .6); ctx.scale(r * .01, r * .01); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.stroke(GP[it.kind]); ctx.restore(); ctx.setTransform(M); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip(); }
+    ctx.fillStyle = it.gl.g4; ctx.fillRect(-r, -r, r * 2, r * 2);
+    if (px > 14){ ctx.save(); ctx.translate(-r * .5, -r * .6); ctx.scale(r * .01, r * .01); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineCap = ctx.lineJoin = 'round'; ctx.stroke(GP[it.kind]); ctx.restore(); ctx.setTransform(L); ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.clip(); }
     if (px > 22) wantImg(it);
   }
-  if (fade > 0){ const iw = raw.naturalWidth, ih = raw.naturalHeight, sw = Math.min(iw, ih); ctx.globalAlpha = fade; ctx.drawImage(raw, (iw - sw) / 2, (ih - sw) / 2, sw, sw, x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; }
-  ctx.fillStyle = it.gl.g1; ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  ctx.fillStyle = it.gl.g2; ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  ctx.restore(); ctx.setTransform(M);
-  if (px > 9){ ctx.fillStyle = it.gl.g3; ctx.beginPath(); ctx.ellipse(x - r * .12, y - r * .52, r * .55, r * .2, -.18, 0, 7); ctx.fill(); }
-  ctx.lineWidth = clamp(1.3 * s, .6, 1.6) / s; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(x, y, r * .92, 0, 7); ctx.stroke();
-  if (isNext){ ctx.lineWidth = clamp(3 * s, 1.4, 3.2) / s; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r * 1.12, 0, 7); ctx.stroke(); }
+  if (fade > 0){ const iw = raw.naturalWidth, ih = raw.naturalHeight, sw = Math.min(iw, ih); ctx.globalAlpha = fade; ctx.drawImage(raw, (iw - sw) / 2, (ih - sw) / 2, sw, sw, -r, -r, r * 2, r * 2); ctx.globalAlpha = 1; }
+  ctx.fillStyle = it.gl.g1; ctx.fillRect(-r, -r, r * 2, r * 2);
+  ctx.fillStyle = it.gl.g2; ctx.fillRect(-r, -r, r * 2, r * 2);
+  ctx.restore(); ctx.setTransform(L);
+  if (px > 9){ ctx.fillStyle = it.gl.g3; ctx.beginPath(); ctx.ellipse(-r * .12, -r * .52, r * .55, r * .2, -.18, 0, 7); ctx.fill(); }
+  ctx.lineWidth = clamp(1.3 * s, .6, 1.6) / s; ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(0, 0, r * .92, 0, 7); ctx.stroke();
+  if (isNext){ ctx.lineWidth = clamp(3 * s, 1.4, 3.2) / s; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r * 1.12, 0, 7); ctx.stroke(); }
+  ctx.setTransform(M);
 }
 // the opening in glass: a clear cube floating on an aurora, the portal in its face
 function drawGlassBox(css, bg, now){
@@ -1296,9 +1300,11 @@ const SFX = (() => {
   // recordings: fetched quietly after the page settles, decoded on the first tap (browsers allow sound only after one),
   // trimmed of silence, and matched in loudness so no sound jumps out
   // [file, loudness it's matched to, longest it may run]: the tap is just its click (the file's tail is hiss that boosting turned into fuzz)
-  const FILES = { tap: ['sounds/tap.mp3', .1, .12], fall: ['sounds/whoosh-short.mp3', .42], enter: ['sounds/whoosh-cinematic.mp3', .48] };
+  const FILES = { tap: ['sounds/tap.mp3', .1, .12], fall: ['sounds/whoosh-short.mp3', .42], enter: ['sounds/whoosh-cinematic.mp3', .48], intro: ['sounds/intro.mp3', .5] };
   const raw = {}, rec = {}; let decoded = false;
-  setTimeout(() => Object.entries(FILES).forEach(([k, [url]]) => fetch(url).then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b){ raw[k] = b; if (ac) decode(); } }).catch(() => {})), 2500);
+  const fetchRec = k => fetch(FILES[k][0]).then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b){ raw[k] = b; if (ac) decode(); } }).catch(() => {});
+  fetchRec('intro');   // the intro's music straight away; the rest once the page has settled
+  setTimeout(() => ['tap', 'fall', 'enter'].forEach(fetchRec), 2500);
   function decode(){
     const a = ac; if (!a) return;
     for (const k in raw){ const b = raw[k]; delete raw[k];
@@ -1321,11 +1327,13 @@ const SFX = (() => {
       }).catch(() => {});
     }
   }
-  function play(k, { vol = 1, rate = 1, reverse = false } = {}){
-    const r = rec[k], a = A(); if (!r || !a || !on) return false;
-    const src = a.createBufferSource(), g = a.createGain(); src.buffer = reverse ? r.rev : r.buf; src.playbackRate.value = rate;
-    g.gain.value = r.gain * vol; src.connect(g).connect(a.destination); src.start(); return true;
+  function play(k, { vol = 1, rate = 1, reverse = false, from = 0 } = {}){
+    const r = rec[k], a = A(); if (!r || !a || !on || from >= r.buf.duration) return null;
+    const src = a.createBufferSource(), g = a.createGain(), t = a.currentTime; src.buffer = reverse ? r.rev : r.buf; src.playbackRate.value = rate;
+    if (from > 0){ g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(r.gain * vol, t + .15); } else g.gain.value = r.gain * vol;   // joining part-way in: a quick fade rather than a click
+    src.connect(g).connect(a.destination); src.start(t, from); return { src, g };
   }
+  let music = null;
   let lastTap = 0, lastOut = 0;
   const tap = () => { if (!on) return; const n = performance.now(); if (n - lastTap < 70) return; lastTap = n; if (!play('tap')){ tone(880, 0, .14, 'triangle', .1); tone(1320, .035, .12, 'sine', .05); } };
   return {
@@ -1336,13 +1344,24 @@ const SFX = (() => {
     // climbing back out: the same whoosh played backwards, as the door twists shut behind you
     out(){ const n = performance.now(); if (n - lastOut < 350) return; lastOut = n; play('fall', { reverse: true, vol: .7 }); },
     tap, pick: tap,
+    // the intro's music, from wherever the intro has got to, and a gentle fade if the intro is skipped
+    music(from = 0){ if (music) return true; music = play('intro', { from }); if (music) music.src.onended = () => { music = null; }; return !!music; },
+    musicOut(){ if (!music || !ac) return; const t = ac.currentTime; music.g.gain.cancelScheduledValues(t); music.g.gain.setValueAtTime(music.g.gain.value, t); music.g.gain.linearRampToValueAtTime(0, t + .6); music.src.stop(t + .65); music = null; },
+    get ready(){ return !!(ac && ac.state === 'running' && rec.intro); },
     get loaded(){ return Object.fromEntries(Object.entries(rec).map(([k, r]) => [k, { secs: +r.buf.duration.toFixed(2), gain: +r.gain.toFixed(1) }])); },
     chime(){ [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => tone(f, i * .09, 1.1, 'sine', .14)); },
     sad(){ tone(392, 0, .4, 'triangle', .12); tone(311.1, .24, .6, 'triangle', .12); },
     get on(){ return on; }, set on(v){ on = v; try { localStorage.setItem('rh-sound', v ? 'on' : 'off'); } catch (e) {} }
   };
 })();
-['pointerdown', 'keydown', 'wheel'].forEach(ev => addEventListener(ev, () => SFX.on && SFX.unlock(), { once: true, passive: true }));
+['pointerdown', 'keydown', 'wheel'].forEach(ev => addEventListener(ev, () => { if (!SFX.on) return; SFX.unlock(); introMusic(); }, { once: true, passive: true }));
+// start the intro's music in step with the intro, as soon as the browser allows sound (it needs a tap first)
+function introMusic(){
+  let n = 0; const w = setInterval(() => {
+    if (!introPlaying || window.rhSkipIntro || ++n > 60){ clearInterval(w); return; }
+    if (window.__intro && SFX.ready){ clearInterval(w); if (window.__intro.t < 6) SFX.music(window.__intro.t); }
+  }, 100);
+}
 document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button, a, [role=button]')) SFX.tap(); }, true);
 let quietPush = false;   // the "enter world" button already played its own whoosh
 function push(){ welcomeFor = null; const T = nextOf(cur); if (cur.box) rabbit.state = 'gone'; cam.s /= cur.K; stack.push(cur); cur = T; want(nextOf(cur)); if (diving){ diving = false; falling = false; $('#fall').classList.remove('on'); } moved(); arrive(cur); if (quietPush) quietPush = false; else SFX.whoosh(); if (game.on && !game.over) checkGame(); }
@@ -1931,11 +1950,12 @@ function startIntro(){
   introPlaying = true; document.body.classList.add('introplay');
   $('#howto').classList.add('gone'); $('#helpBtn').classList.remove('on');
   const done = () => {
-    introPlaying = false; dropPre(); document.body.classList.add('introfade'); document.body.classList.remove('introplay');
+    introPlaying = false; dropPre(); SFX.musicOut(); document.body.classList.add('introfade'); document.body.classList.remove('introplay');
     setTimeout(() => document.body.classList.remove('introfade'), 1200);
     try { localStorage.setItem('rh-intro-seen', '1'); } catch (e) {}
     setTimeout(() => showAbout(true), 1100);   // the card always follows the intro
   };
+  introMusic();
   Promise.all([introMod, Promise.race([langReady, sleep(1500)])]).then(([m]) => window.rhSkipIntro ? done() : m.playIntro({ titles: WORLDS_L, strings: { skip: t('skipIntro'), tagline: t('tagline') }, onReveal: done })).catch(e => { console.error(e); done(); });
 }
 $('#replayIntro').onclick = startIntro;
