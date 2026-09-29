@@ -739,6 +739,8 @@ let digging = 0;
 function want(T){ if (T && T.status === 'idle'){ T.status = 'queued'; digQueue.push(T); pumpDig(); } }
 // the world you've picked, or are hovering over, goes to the front of the queue
 function wantNow(T){ if (!T) return; if (T.status === 'idle'){ T.status = 'queued'; digQueue.unshift(T); } else if (T.status === 'queued'){ const i = digQueue.indexOf(T); if (i > 0){ digQueue.splice(i, 1); digQueue.unshift(T); } } pumpDig(); }
+// a world the person asked for (dice, search) starts at once, rather than waiting behind background loading
+function digNow(T){ if (!T || (T.status !== 'idle' && T.status !== 'queued')) return; const i = digQueue.indexOf(T); if (i >= 0) digQueue.splice(i, 1); digging++; dig(T).finally(() => { digging--; pumpDig(); }); }
 function pumpDig(){ while (digging < 3 && digQueue.length){ const T = digQueue.shift(); digging++; dig(T).finally(() => { digging--; pumpDig(); }); } }
 async function dig(T){
   T.status = 'loading';
@@ -778,7 +780,14 @@ const RINGS = Array.from({ length: 24 }, (_, i) => paths(gen.circle(0, 0, 100, {
 const nextOf = T => T.jump || (T.items.length && (!game.on || T.picked) ? topic(T.items[T.next].title) : null);
 const imgQueue = []; let imgBusy = 0;
 function wantImg(it){ if (it.img !== 'no' || !it.thumb) return; it.img = 'queued'; imgQueue.push(it); pumpImg(); }
-function pumpImg(){ while (imgBusy < 8 && imgQueue.length){ let bi = 0; for (let i = 1; i < imgQueue.length; i++) if ((imgQueue[i].lastPx || 0) > (imgQueue[bi].lastPx || 0)) bi = i; const it = imgQueue.splice(bi, 1)[0]; imgBusy++; it.img = 'loading'; loadImg(it.thumb).catch(() => loadImg(it.thumb.replace(/\/\d+px-/, '/120px-'))).then(img => { it.bmp = { raw: img, width: img.naturalWidth, height: img.naturalHeight }; it.img = 'done'; }).catch(() => { it.img = 'fail'; }).finally(() => { imgBusy--; pumpImg(); }); } }
+// photos no longer on screen (a world you've left, an orb scrolled away) give up their place in the queue
+function pruneImg(){ const now = performance.now(); for (let i = imgQueue.length - 1; i >= 0; i--) if (now - (imgQueue[i].seen || 0) > 2500){ imgQueue[i].img = 'no'; imgQueue.splice(i, 1); } }
+// a new world's biggest orbs get their photos fetched while it's still being revealed, so they're there when it appears
+function primeImgs(T, n = 48){ const now = performance.now(); T.items.slice(0, n).forEach((it, k) => { it.lastPx = Math.max(it.lastPx || 0, 60 - k); it.seen = now; wantImg(it); }); }
+function pumpImg(){ pruneImg(); while (imgBusy < 16 && imgQueue.length){ let bi = 0; for (let i = 1; i < imgQueue.length; i++) if ((imgQueue[i].lastPx || 0) > (imgQueue[bi].lastPx || 0)) bi = i; const it = imgQueue.splice(bi, 1)[0]; imgBusy++; it.img = 'loading';
+    // a photo Wikipedia is slow to produce lets the next one start after a moment, and still appears when it arrives
+    let held = true; const free = () => { if (held){ held = false; imgBusy--; pumpImg(); } }; const slow = setTimeout(free, 2500);
+    loadImg(it.thumb).catch(() => loadImg(it.thumb.replace(/\/\d+px-/, '/120px-'))).then(img => { it.bmp = { raw: img, width: img.naturalWidth, height: img.naturalHeight }; it.img = 'done'; }).catch(() => { it.img = 'fail'; }).finally(() => { clearTimeout(slow); free(); }); } }
 
 /* ─────────── drawing ─────────── */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -860,7 +869,7 @@ function drawTopic(T, s, depth){
   if (child){
     if (hp > 20) want(child);
     ctx.save(); ctx.beginPath(); ctx.arc(0, 0, RHt, 0, 7); ctx.clip();
-    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; wantImg(it); }); }
+    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
     if (child.status === 'ready' && depth < 4 && frameBudget-- > 0) drawTopic(child, s / T.K, depth + 1);
     else {
       ctx.setTransform(M); const g = ctx.createRadialGradient(0, 0, 0, 0, 0, RHt); g.addColorStop(0, '#111'); g.addColorStop(1, '#555'); ctx.fillStyle = g; ctx.fillRect(-RHt, -RHt, RHt * 2, RHt * 2);
@@ -1025,7 +1034,7 @@ function drawGlass(T, s, depth){
   for (const it of T.items){
     const px = it.r * s; if (px < 1.2) continue;
     if (Math.hypot(it.x, it.y) - it.r * 2 > vis) continue;
-    it.lastPx = px; if (px > 2.5) wantImg(it);
+    it.lastPx = px; it.seen = performance.now(); if (px * BUMP() > DOT - 4) wantImg(it);
     if (px * BUMP() < DOT){ const a = clamp((px * BUMP() - 2) / (DOT - 2), .25, 1); ctx.globalAlpha = .35 + .45 * a; ctx.fillStyle = it === nx ? '#ffffff' : (it.wash || '#cfd8ff'); ctx.beginPath(); ctx.arc(it.x, it.y, it.r * BUMP() * (.35 + .25 * a), 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
     const isGoal = game.on && game.glow && game.goal && it.title === game.goal.title;
     glassOrb(it, s, M, bg, pal, now, it === nx, it === hovered, isGoal);
@@ -1056,7 +1065,7 @@ function drawGlass(T, s, depth){
   ctx.fillStyle = '#05060c'; ctx.fillRect(-RHt, -RHt, RHt * 2, RHt * 2);
   if (child){
     if (hp > 20) want(child);
-    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; wantImg(it); }); }
+    if (child.status === 'ready' && !child.primed){ child.primed = true; child.items.slice(0, 48).forEach(it => { it.lastPx = it.lastPx || .5; it.seen = performance.now(); wantImg(it); }); }
     if (child.status === 'ready' && doorO > .01 && depth < 4 && frameBudget-- > 0) drawTopic(child, s / T.K, depth + 1);
   }
   ctx.setTransform(M);
@@ -1542,12 +1551,12 @@ async function enterWorld(title, withTile = false){
   const img = E.querySelector('img'); img.removeAttribute('src');
   E.classList.remove('gone', 'out', 'ready'); requestAnimationFrame(() => E.classList.add('on'));
   summary(title).then(sm => { if (tok !== enterTok || !sm) return; E.querySelector('h2').textContent = sm.title; E.querySelector('.d').textContent = sm.description || ''; if (sm.thumbnail) img.src = sm.thumbnail.source; }).catch(() => {});
-  const T = topic(title); wantNow(T);
+  const T = topic(title); digNow(T);
   const t0 = performance.now();
   await new Promise(res => { const w = setInterval(() => { if (T.status === 'ready' || performance.now() - t0 > 25000){ clearInterval(w); res(); } }, 120); });
   if (tok !== enterTok) return;
   if (T.status !== 'ready' || !T.items.length){ E.querySelector('.st').textContent = t('cantOpen'); setTimeout(() => { if (tok === enterTok){ E.classList.remove('on'); setTimeout(() => E.classList.add('gone'), 450); } }, 2200); return; }
-  E.classList.add('ready'); E.querySelector('.st').textContent = t('orbs', { n: T.items.length });
+  E.classList.add('ready'); E.querySelector('.st').textContent = t('orbs', { n: T.items.length }); primeImgs(T);
   await new Promise(r => setTimeout(r, 650));
   if (tok !== enterTok) return;
   for (const X of TOPICS.values()){ X.next = 0; X.jump = null; }
@@ -1751,7 +1760,7 @@ document.querySelectorAll('#rules .lv button').forEach(b => b.addEventListener('
 
 function openWorld(T){
   const L = $('#loading'); L.querySelector('.msg').textContent = 'populating your world…'; L.querySelector('.sub').textContent = T.title; L.classList.add('on');
-  wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); if (!introPlaying) setTimeout(() => showAbout(true), 500); /* the "What is" card always comes first (after the intro, when that plays) */ } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
+  wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); primeImgs(T); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); if (!introPlaying) setTimeout(() => showAbout(true), 500); /* the "What is" card always comes first (after the intro, when that plays) */ } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
 }
 // the glowing ring shown before the intro can draw: fade it once the intro is on screen (or can't be)
 function dropPre(){ const p = $('#pre'); if (!p || p.classList.contains('out')) return; p.classList.add('out'); setTimeout(() => p.remove(), 1000); }
