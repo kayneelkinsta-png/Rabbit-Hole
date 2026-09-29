@@ -160,7 +160,7 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
   addEventListener('resize', onResize); onResize();
 
   // ---------- run ----------
-  let t = 0, last = performance.now(), revealed = false, skipping = false, hold = false;
+  let t = 0, last = performance.now(), revealed = false, skipping = false, hold = false, handed = false;
   const skip = () => { if (skipping || revealed) return; skipping = true; titleEl.classList.add('out'); flash.style.transition = 'opacity .3s ease'; flash.style.opacity = 1; setTimeout(reveal, 320); };
   skipBtn.onclick = skip;
   // keys only count once the Skip button is showing, so a stray Enter from the address bar doesn't end it
@@ -224,6 +224,8 @@ export async function playIntro({ titles = [], strings = {}, onReveal = () => {}
     if (!skipping) flash.style.opacity = seg(t, T.flash - .25, T.reveal);
     if (t >= T.reveal) reveal();
     composer.render();
+    // the page's waiting glow hands over once the words are starting to show
+    if (t > .25 && !handed) { handed = true; const p = document.getElementById('pre'); if (p) { p.classList.add('out'); setTimeout(() => p.remove(), 1000); } }
   });
 }
 

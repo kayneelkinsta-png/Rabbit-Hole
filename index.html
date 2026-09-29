@@ -30,6 +30,20 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
 } }
 </script>
+<!-- start fetching the intro's 3D code straight away, all at once rather than one file after another -->
+<link rel="modulepreload" href="intro.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/RGBELoader.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/EffectComposer.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutputPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/Pass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/ShaderPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/MaskPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/CopyShader.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/LuminosityHighPassShader.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/shaders/OutputShader.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -78,7 +92,7 @@ canvas.drag{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/
 #card .k{color:var(--spot);font-size:15px}
 #card h2{margin:0;font-weight:400;font-size:30px;line-height:1.05}
 #card .d{color:var(--mute);font-size:17px;margin:2px 0 8px}
-#card p{margin:0 0 10px;font-size:18px;line-height:1.3}
+#card p{margin:0 0 10px;font-size:18px;line-height:1.3;white-space:pre-line}
 #card img{width:100%;max-height:170px;object-fit:cover;border:2px solid var(--ink);margin-bottom:8px;filter:grayscale(1) contrast(1.2)}
 #card .row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
 #card .row button,#card .row a{font:inherit;font-size:18px;padding:4px 12px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
@@ -320,6 +334,13 @@ body.playing #langWrap{display:none}
 #tour .tip .back[hidden]{display:none}
 #tour .tip .next{font:inherit;font-size:15px;font-weight:600;padding:9px 20px;border-radius:999px;border:0;background:#fff;color:#0b0f1e;cursor:pointer}
 body.introplay .ui,body.introplay .scrim{opacity:0 !important;pointer-events:none !important}
+/* from the very first paint until the intro is drawing: a glowing ring in the dark, so there's never a blank wait */
+#pre{position:fixed;inset:0;z-index:1001;display:grid;place-items:center;background:#05070f;pointer-events:none;transition:opacity .9s ease}
+#pre.out{opacity:0}
+#pre::before{content:'';position:absolute;inset:0;opacity:.8;animation:preIn 1.4s ease both;background:radial-gradient(1.4px 1.4px at 12% 22%,#fff,transparent),radial-gradient(1px 1px at 27% 71%,#cfd8ff,transparent),radial-gradient(1.2px 1.2px at 41% 14%,#fff,transparent),radial-gradient(1px 1px at 63% 83%,#dfe5ff,transparent),radial-gradient(1.4px 1.4px at 78% 31%,#fff,transparent),radial-gradient(1px 1px at 88% 64%,#cfd8ff,transparent),radial-gradient(1px 1px at 8% 88%,#fff,transparent),radial-gradient(1.2px 1.2px at 55% 42%,#e8ecff,transparent),radial-gradient(1px 1px at 34% 36%,#fff,transparent),radial-gradient(1px 1px at 93% 12%,#dfe5ff,transparent)}
+#pre i{width:min(52vw,300px);aspect-ratio:3.2;border-radius:50%;border:1.5px solid rgba(214,224,255,.85);background:radial-gradient(closest-side,rgba(5,7,15,.96),rgba(40,55,140,.35) 72%,transparent);box-shadow:0 0 18px rgba(130,160,255,.7),0 0 70px rgba(110,130,255,.4),inset 0 0 22px rgba(130,160,255,.5);animation:preIn 1s ease both,preBreath 2.4s ease-in-out 1s infinite}
+@keyframes preIn{from{opacity:0;transform:scale(.92)}}
+@keyframes preBreath{50%{opacity:.72;transform:scale(1.035)}}
 body.introfade .ui,body.introfade .scrim{transition:opacity 1.1s ease !important}
 #replayIntro{display:none !important;align-self:center;font:inherit;font-size:14px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:8px 16px;cursor:pointer}
 #replayIntro:hover{background:rgba(255,255,255,.18)}
@@ -342,6 +363,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
 </style>
 </head>
 <body class="glass">
+<div id="pre" aria-hidden="true"><i></i></div>
 <canvas id="c"></canvas>
 <div id="scrimTop" class="scrim"></div><div id="scrimBot" class="scrim"></div>
 <div id="top" class="ui">
@@ -433,10 +455,37 @@ const t = (k, v = {}) => ((STR[LANG] && STR[LANG][k]) || STR.en[k] || k).replace
 // where an article's own links end: "See also", "References"… in each language
 const CUT_RE = /^(See also|References|Notes|Further reading|External links|Bibliography|Sources|Citations|Footnotes|Véase también|Referencias|Notas|Bibliografía|Enlaces externos|Voir aussi|Notes et références|Références|Bibliographie|Liens externes|Articles connexes|Siehe auch|Literatur|Weblinks|Einzelnachweise|Anmerkungen|Ver também|Referências|Ligações externas|Links externos|Voci correlate|Note|Collegamenti esterni|Altri progetti|Zie ook|Externe links|Bronnen|Referenties|Zobacz też|Przypisy|Linki zewnętrzne|Ayrıca bakınız|Kaynakça|Dış bağlantılar|Lihat pula|Referensi|Pranala luar|См\. также|Примечания|Литература|Ссылки|Див\. також|Примітки|Посилання|انظر أيضًا|انظر أيضا|المراجع|مراجع|وصلات خارجية|इन्हें भी देखें|सन्दर्भ|संदर्भ|बाहरी कड़ियाँ|参见|參見|参考文献|參考文獻|外部链接|外部連結|关联项目|関連項目|脚注|出典|外部リンク|같이 보기|각주|참고 문헌|외부 링크)/i;
 let API = WIKI() + '/w/api.php';
-const q = p => fetch(API + '?' + new URLSearchParams({ ...p, format: 'json', formatversion: '2', origin: '*' })).then(r => r.json());
+// Wikipedia sometimes asks us to slow down (429) or hiccups: wait a moment and ask again, rather than giving up
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function getJSON(url){
+  for (let k = 0; ; k++){
+    let r = null; try { r = await fetch(url); } catch (e) {}
+    if (r && r.ok) return r.json();
+    if (r && r.status === 404) return null;
+    if (k === 3) throw new Error('wikipedia ' + (r ? r.status : 'offline'));
+    await sleep(700 * 2 ** k + Math.random() * 500);
+  }
+}
+const q = p => getJSON(API + '?' + new URLSearchParams({ ...p, format: 'json', formatversion: '2', origin: '*' }));
 const memo = new Map();
-const once = (k, f) => { if (!memo.has(k)) memo.set(k, f().catch(() => null)); return memo.get(k); };
-const summary = t => once('s:' + LANG + ':' + t, () => fetch(WIKI() + '/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_'))).then(r => r.ok ? r.json() : null));
+// remember answers, but never a failure: the next ask tries again
+const once = (k, f) => { if (!memo.has(k)) memo.set(k, f().catch(() => { memo.delete(k); return null; })); return memo.get(k); };
+// a tile's text: the article's opening, a paragraph or two, long enough to be worth reading and short enough for a tile
+function trimLead(text){
+  const ps = String(text || '').split(/\n+/).map(x => x.replace(/\s*\(\s*[;,]?\s*\)/g, '').trim()).filter(Boolean);
+  let out = ps[0] || '';
+  for (let i = 1; i < ps.length && out.length < 380; i++) out += '\n\n' + ps[i];
+  if (out.length > 820){ const cut = Math.max(out.lastIndexOf('. ', 820), out.lastIndexOf('。', 820)); if (cut > 250) out = out.slice(0, cut + 1); }
+  return out;
+}
+// every tile comes from Wikipedia's main API (it takes bursts in its stride); the quick-summary service is only a fallback
+const summary = t => once('s:' + LANG + ':' + t, async () => {
+  const j = await q({ action: 'query', titles: t, prop: 'extracts|pageimages|description|info', exintro: '1', explaintext: '1', redirects: '1', piprop: 'thumbnail', pithumbsize: '640', inprop: 'url' }).catch(() => null);
+  const pg = j && j.query && j.query.pages && j.query.pages[0];
+  if (pg && pg.missing) return null;
+  if (pg && pg.extract) return { title: pg.title, description: pg.description || '', extract: trimLead(pg.extract), thumbnail: pg.thumbnail ? { source: pg.thumbnail.source } : null, content_urls: { desktop: { page: pg.fullurl || WIKI() + '/wiki/' + encodeURIComponent(pg.title.replace(/ /g, '_')) } } };
+  return getJSON(WIKI() + '/api/rest_v1/page/summary/' + encodeURIComponent(t.replace(/ /g, '_')));
+});
 const GENERIC = new Set(['Species', 'Genus', 'Family (biology)', 'Order (biology)', 'Class (biology)', 'Phylum', 'Taxonomy (biology)', 'Binomial nomenclature', 'Common name', 'Mass', 'Weight', 'Length', 'Kilogram', 'Metre', 'Kilometre', 'Mile', 'English language', 'Latin', 'Ancient Greek', 'Wikipedia', 'Human', 'Population', 'Synonym', 'ISBN (identifier)', 'Doi (identifier)', 'JSTOR (identifier)', 'PMID (identifier)', 'S2CID (identifier)', 'Bibcode (identifier)', 'OCLC (identifier)', 'ISSN (identifier)', 'Hdl (identifier)', 'PMC (identifier)', 'ArXiv (identifier)']);
 const DULL = /^(Topics referred to|Amount of|Basic unit|SI unit|Unit of|Wikimedia|Disambiguation|Identifier)/i;
 // every link in the article, in the order a reader meets them
@@ -699,7 +748,11 @@ async function dig(T){
     const info = (await pageInfo(parsed.links)).filter((p, i, a) => a.findIndex(x => x.title === p.title) === i && p.title !== T.name && !DULL.test(p.description || '') && !GENERIC.has(p.title)).slice(0, MAXN);
     T.setting = settingOf(T.desc + ' ' + T.name);
     layout(T, info);
-  } catch (e) { T.setting = 'lab'; layout(T, []); }
+  } catch (e) {
+    // Wikipedia didn't answer: try this world again shortly, rather than leaving it empty for good
+    if ((T.fails = (T.fails || 0) + 1) < 3){ T.status = 'idle'; setTimeout(() => want(T), 2000 * T.fails); return; }
+    T.setting = 'lab'; layout(T, []);
+  }
   T.status = 'ready';
 }
 // a sunflower spiral with log-spaced radii: the same density of things at every zoom
@@ -1378,7 +1431,8 @@ async function openCard(title, kicker, autoDive){
   card.classList.add('on'); card.querySelector('.k').textContent = kicker; dig.hidden = kicker === 'your goal' || kicker === t('randomWorld') || /no clicks left/.test(kicker); dig.textContent = t('diveIn');
   if (autoDive){ void dig.offsetWidth; dig.classList.add('counting'); cardDiveT = setTimeout(diveNow, 4500); } card.querySelector('h2').textContent = title; card.querySelector('.d').textContent = ''; card.querySelector('p').textContent = t('lookingUp'); card.querySelector('img').hidden = true;
   $('#cardWiki').href = WIKI() + '/wiki/' + encodeURIComponent(title.replace(/ /g, '_'));
-  const s = await summary(title); if (tok !== cardTok) return;
+  let s = await summary(title); if (tok !== cardTok) return;
+  if (!s){ await sleep(1500); if (tok !== cardTok) return; s = await summary(title); if (tok !== cardTok) return; }
   if (!s){ card.querySelector('p').textContent = t('noEntry'); return; }
   card.querySelector('h2').textContent = s.title; card.querySelector('.d').textContent = s.description || ''; card.querySelector('p').textContent = s.extract || '';
   if (s.thumbnail){ const im = card.querySelector('img'); im.src = s.thumbnail.source; im.hidden = false; }
@@ -1521,6 +1575,7 @@ const DRY_DESC = /\b(economic (indicator|measure|concept)|monetary measure|stati
 const isDry = it => DRY_TITLE.test(it.title) || DRY_DESC.test(it.desc || '');
 // every round is built by walking real links from the start, so there is always a way through
 const dayKey = () => new Date().toISOString().slice(0, 10);
+const SITE = 'https://kayneelkinsta-png.github.io/Rabbit-Hole/';   // where shared results send people
 async function buildRound(cfg, rnd = Math.random, say = () => {}){
   const par = cfg.par;
   for (let attempt = 0; attempt < 6; attempt++){
@@ -1651,7 +1706,7 @@ $('#daily').onclick = () => startGame({ daily: true });
 // a Wordle-style result: one mark per click, green on the known route, yellow off it, a star for the goal
 function resultText(){
   const onRoute = new Set(game.route.map(T => T.title)), marks = game.picks.map(t => t === game.goal.title ? '⭐' : onRoute.has(t) ? '🟢' : '🟡').join('');
-  return `Rabbit Hole${game.daily ? ' · daily ' + dayKey() : ''}\n${game.start.name} → ${game.goal.name}\n${marks || '·'}  ${game.how === 'win' ? `found in ${game.used} click${game.used === 1 ? '' : 's'}` : 'not found'} (best route ${game.par})`;
+  return `Rabbit Hole${game.daily ? ' · daily ' + dayKey() : ''}\n${game.start.name} → ${game.goal.name}\n${marks || '·'}  ${game.how === 'win' ? `found in ${game.used} click${game.used === 1 ? '' : 's'}` : 'not found'} (best route ${game.par})\n${SITE}`;
 }
 $('#copyRes').onclick = async () => {
   const text = resultText(), b = $('#copyRes');
@@ -1676,6 +1731,7 @@ $('#saveCard').onclick = () => {
   });
   g.fillStyle = ink; g.font = `${glass ? '700 ' : ''}64px ${fam}`; g.fillText(game.how === 'win' ? `found ${game.goal.name.length > 20 ? 'it' : game.goal.name} in ${game.used}` : `goal: ${game.goal.name}`, 540, 1200);
   g.fillStyle = mute; g.font = `38px ${fam}`; g.fillText(`best known route: ${game.par} clicks`, 540, 1262);
+  g.font = `30px ${fam}`; g.fillText(SITE.replace(/^https:\/\//, '').replace(/\/$/, ''), 540, 1318);
   c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `rabbit-hole-${game.daily ? dayKey() : 'run'}.png`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); });
 };
 $('#sound').onclick = () => { SFX.on = !SFX.on; setIcon('sound', SFX.on ? 'sound' : 'mute', SFX.on ? 'sound on' : 'sound off'); if (SFX.on) SFX.pick(); };
@@ -1697,18 +1753,22 @@ function openWorld(T){
   const L = $('#loading'); L.querySelector('.msg').textContent = 'populating your world…'; L.querySelector('.sub').textContent = T.title; L.classList.add('on');
   wantNow(T); const wait = setInterval(() => { if (T.status !== 'ready') return; clearInterval(wait); L.classList.remove('on'); if (!openWorld.primed){ openWorld.primed = true; setTimeout(() => prepareRound(false, game.level), 4000); if (!introPlaying) setTimeout(() => showAbout(true), 500); /* the "What is" card always comes first (after the intro, when that plays) */ } stack = []; cur = T; cam.s = fitS(); cam.phi = spinGoal = 0; want(nextOf(cur)); moved(); arrive(cur); }, 100);
 }
+// the glowing ring shown before the intro can draw: fade it once the intro is on screen (or can't be)
+function dropPre(){ const p = $('#pre'); if (!p || p.classList.contains('out')) return; p.classList.add('out'); setTimeout(() => p.remove(), 1000); }
+setTimeout(dropPre, 12000);   // never leave it up, whatever happens
 function startIntro(){
   if (introPlaying) return;
+  const introMod = import('./intro.js');
   aboutAuto = false;   // each intro is followed by the card, once
   introPlaying = true; document.body.classList.add('introplay');
   $('#howto').classList.add('gone'); $('#helpBtn').classList.remove('on');
   const done = () => {
-    introPlaying = false; document.body.classList.add('introfade'); document.body.classList.remove('introplay');
+    introPlaying = false; dropPre(); document.body.classList.add('introfade'); document.body.classList.remove('introplay');
     setTimeout(() => document.body.classList.remove('introfade'), 1200);
     try { localStorage.setItem('rh-intro-seen', '1'); } catch (e) {}
     setTimeout(() => showAbout(true), 1100);   // the card always follows the intro
   };
-  Promise.race([langReady, new Promise(r => setTimeout(r, 1500))]).then(() => import('./intro.js')).then(m => m.playIntro({ titles: WORLDS_L, strings: { skip: t('skipIntro'), tagline: t('tagline') }, onReveal: done })).catch(e => { console.error(e); done(); });
+  Promise.all([introMod, Promise.race([langReady, sleep(1500)])]).then(([m]) => m.playIntro({ titles: WORLDS_L, strings: { skip: t('skipIntro'), tagline: t('tagline') }, onReveal: done })).catch(e => { console.error(e); done(); });
 }
 $('#replayIntro').onclick = startIntro;
 
