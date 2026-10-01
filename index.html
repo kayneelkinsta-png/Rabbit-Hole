@@ -485,7 +485,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div id="titleBlock"><div id="mark" role="button" tabindex="0" aria-label="Home">Rabbit Hole</div><div id="now"></div></div>
   <div id="seekWrap"><div id="langWrap"><button id="langBtn" class="icon" type="button" aria-haspopup="listbox" aria-label="Language" title="Language"><span></span></button><ul id="langList" role="listbox"></ul></div><button id="seekBtn" class="icon" aria-label="Search" title="search"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button><input id="seek" class="sk" placeholder="search anything…" data-ph="search" autocomplete="off" aria-label="Start from a Wikipedia topic"><ul id="found" class="sk"></ul></div>
 </div>
-<div id="hint" class="ui sk">search anything · scroll, pinch or hold to fall in · drag to spin · click anything to send the hole there</div>
+<div id="hint" class="ui sk">search anything · scroll, pinch or hold to fall in · drag to spin · shift-drag or two fingers to look around · click anything to send the hole there</div>
 <div id="trail" class="ui"></div>
 <div id="modes" class="ui"><button id="modePlay" class="play" data-i="play">Play the game</button><button id="modeFree" class="link" data-i="explore">or just explore</button></div>
 <div id="howto" class="ui sk gone">
@@ -508,7 +508,7 @@ body.glass #modes .link{background:rgba(12,16,28,.55) !important;border-radius:9
   <div class="modes3"><button id="aboutGame" type="button"><svg viewBox="0 0 24 24"><path d="M7 7.5h10a4.2 4.2 0 0 1 4.1 3.3l.95 4.6a2.6 2.6 0 0 1-4.35 2.4L15.9 16H8.1l-1.8 1.8a2.6 2.6 0 0 1-4.35-2.4l.95-4.6A4.2 4.2 0 0 1 7 7.5z"/><path d="M7.6 10.4v3.2M6 12h3.2"/><circle cx="15.6" cy="11" r=".95" fill="currentColor" stroke="none"/><circle cx="17.6" cy="13" r=".95" fill="currentColor" stroke="none"/></svg><span data-i="modeGame">Game play</span></button><button id="aboutFree" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4 13.5 13.5 8.4 15.6 10.5 10.5z"/></svg><span data-i="modeFree">Free roam</span></button><button id="aboutTour" type="button"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg><span data-i="modeTutorial">Tutorial</span></button></div>
   <div class="agains"><button id="aboutIntro" class="again" type="button" data-i="watchIntro">&#9654; watch the intro again</button><a id="aboutFeedback" class="again" target="_blank" rel="noopener" data-i="feedback" hidden>&#9998; tell us what you think</a></div>
   <p class="credits" data-i="credits">Articles and pictures from <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a> (CC BY-SA) &middot; 3D by <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> &middot; light from <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> (CC0) &middot; sound by <a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a></p>
-  <p class="build">version 30 Sep · 2</p>
+  <p class="build">version 1 Oct · 1</p>
 </div>
 <div id="reader" class="gone" role="dialog" aria-label="Article">
   <header><button class="home" type="button" data-i="readerHome">&#8249; Rabbit Hole</button><button class="prev" type="button" aria-label="Previous article" hidden>&#8592;</button><div class="t"></div><a class="ext" target="_blank" rel="noopener">wikipedia.org &#8599;</a></header>
@@ -946,6 +946,7 @@ function pumpImg(){ pruneImg(); while (imgBusy < 24 && imgQueue.length){ let bi 
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let W = innerWidth, H = innerHeight, DPR = Math.min(devicePixelRatio || 1, 2);
 let CX = 0, CY = 0;
+let panX = 0, panY = 0, panAt = -1e9, panDrag = false;   // looking around a world: springs back to the middle once you let it be
 function resize(){ W = innerWidth; H = innerHeight; DPR = Math.min(devicePixelRatio || 1, 2); cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px'; placeCentre(); }
 // the world sits in the middle of whatever space is free between the title and the controls
 let CXt = 0, CYt = 0, AH = 0;
@@ -962,6 +963,9 @@ setInterval(placeCentre, 700);
 const cam = { s: 1, phi: 0 };
 let stack = [], cur = null, frameBudget = 0;
 const halfDiag = () => Math.hypot(Math.max(CX, W - CX), Math.max(CY, H - CY));
+// for deciding when you've zoomed out of a world: measured from where the world rests, so looking around never counts as zooming out
+const restDiag = () => Math.hypot(Math.max(CXt, W - CXt), Math.max(CYt, H - CYt));
+function lookAround(dx, dy){ panX = Math.max(-W * .42, Math.min(W * .42, panX + dx)); panY = Math.max(-H * .38, Math.min(H * .38, panY + dy)); panAt = performance.now(); CX = CXt + panX; CY = CYt + panY; }
 const fitS = () => cur && cur.box ? Math.min(W, H) * .17 / 190 : Math.min(W * .86, AH || H) / 2 / (R0 * 1.2);
 
 function strokeSet(set, css){ for (const q of set){ if (q.f && q.f !== 'none'){ ctx.fillStyle = q.f; ctx.fill(q.p); } if (q.s && q.s !== 'none'){ ctx.strokeStyle = q.s; ctx.lineWidth = clamp(q.w * css, .5, 2.4) / css; ctx.stroke(q.p); } } }
@@ -1563,13 +1567,13 @@ function transitions(){
   let popped = false;
   const inGame = game.on && !game.over;
   for (let n = 0; n < 3; n++){
-    const vis = halfDiag() / cam.s, nx = nextOf(cur);
+    const vis = restDiag() / cam.s, nx = nextOf(cur);
     if (stack.length && vis > R0 && !inGame){ pop(); popped = true; continue; }
     if (nx && nx.status === 'ready' && vis < cur.RH * .97){ push(); continue; }
     break;
   }
   if (!stack.length || inGame) cam.s = Math.max(cam.s, fitS() * (inGame ? .98 : .8));
-  const nx = nextOf(cur); if (!(nx && nx.status === 'ready')) cam.s = Math.min(cam.s, halfDiag() / (cur.RH * 1.02));
+  const nx = nextOf(cur); if (!(nx && nx.status === 'ready')) cam.s = Math.min(cam.s, restDiag() / (cur.RH * 1.02));
   if (popped) leadsBack();
   // the greeting waits until the door has shut behind you and you've pulled back a little further
   if (welcomeFor){ if (welcomeFor !== cur) welcomeFor = null; else if (cur.RH * cam.s < Math.min(W, H) * .085){ arrive(cur, t('welcomeBack')); welcomeFor = null; } }
@@ -1583,7 +1587,8 @@ let diveRate = 1.045, lastTick = performance.now();
 function beginDive(){ diveRate = clamp(Math.exp(Math.log(Math.max(cur ? cur.K : 20, 20) * 1.8) / 165), 1.035, 1.1); falling = true; diving = true; }
 function tick(){
   const tNow = performance.now(), dt = clamp((tNow - lastTick) / 16.7, .25, 4); lastTick = tNow;
-  CX += (CXt - CX) * .12; CY += (CYt - CY) * .12;
+  if ((panX || panY) && (performance.now() - panAt > 2500 || falling || holding) && !(ptrs.size && panDrag)){ panX = panY = 0; }   // back to the middle, ready to fall
+  CX += (CXt + panX - CX) * .12; CY += (CYt + panY - CY) * .12;
   if (!cur){ ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#0b0f1e'; ctx.fillRect(0, 0, cv.width, cv.height); return; }
   if (falling) cam.s *= Math.pow(diving ? diveRate : 1.012, dt);
   else if (settleUntil > tNow && game.on && !game.over){ const f = fitS(); cam.s *= Math.pow(f / cam.s, Math.min(1, .07 * dt)); }
@@ -1805,17 +1810,25 @@ function nudge(){
   const now = performance.now(); if (now - nudgeT < 2500) return; nudgeT = now;
   if (cur.box && !game.on){ hideFront(); const w = $('#seekWrap'); w.classList.remove('nudge'); void w.offsetWidth; w.classList.add('nudge'); openSeek(); }
 }
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (ptrs.size === 1){ downAt = { x: e.clientX, y: e.clientY }; moveSum = 0; holdDir = e.button === 2 || e.shiftKey ? -1 : 1; clearTimeout(holdT); holdT = setTimeout(() => { if (moveSum < 6 && ptrs.size === 1){ holding = true; tip.classList.remove('on'); } }, 260); } stopFall(); cv.classList.add('drag'); });
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (ptrs.size === 2){ const [p1, p2] = [...ptrs.values()]; pinch = { d: Math.hypot(p1.x - p2.x, p1.y - p2.y), ang: Math.atan2(p2.y - p1.y, p2.x - p1.x), mx: (p1.x + p2.x) / 2, my: (p1.y + p2.y) / 2 }; } if (ptrs.size === 1){ downAt = { x: e.clientX, y: e.clientY }; moveSum = 0; holdDir = e.button === 2 || e.shiftKey ? -1 : 1; panDrag = e.button === 2 || e.shiftKey; clearTimeout(holdT); holdT = setTimeout(() => { if (moveSum < 6 && ptrs.size === 1){ holding = true; tip.classList.remove('on'); } }, 260); } stopFall(); cv.classList.add('drag'); });
 cv.addEventListener('pointermove', e => {
   const prev = ptrs.get(e.pointerId); if (!prev){ hover(e); return; }
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); tip.classList.remove('on');
-  if (ptrs.size === 1){ if (holding) return; moveSum += Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y); if (moveSum > 5){ const a0 = Math.atan2(prev.y - CY, prev.x - CX), a1 = Math.atan2(e.clientY - CY, e.clientX - CX); let da = a1 - a0; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI; cam.phi -= da; spinGoal = cam.phi; } }
-  else if (ptrs.size === 2){ const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x); if (pinch){ cam.s *= d / pinch.d; cam.phi -= ang - pinch.ang; spinGoal = cam.phi; } pinch = { d, ang }; moveSum = 99; }
+  if (ptrs.size === 1){ if (holding) return; moveSum += Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y); if (moveSum > 5 && panDrag){ clearTimeout(holdT); lookAround(e.clientX - prev.x, e.clientY - prev.y); } else if (moveSum > 5){ const a0 = Math.atan2(prev.y - CY, prev.x - CX), a1 = Math.atan2(e.clientY - CY, e.clientX - CX); let da = a1 - a0; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI; cam.phi -= da; spinGoal = cam.phi; } }
+  else if (ptrs.size === 2){ moveSum = 99; if (!pinchRaf) pinchRaf = requestAnimationFrame(applyPinch); }
 });
 let lastPointer = { x: innerWidth / 2, y: innerHeight / 2 };
 let holding = false, holdT = 0, holdV = 0, holdDir = 1;
 cv.addEventListener('contextmenu', e => e.preventDefault());
-function endPtr(e){ if (!ptrs.delete(e.pointerId)) return; if (ptrs.size < 2) pinch = null; if (!ptrs.size){ clearTimeout(holdT); const held = holding; holding = false; cv.classList.remove('drag'); if (!held && moveSum < 6 && e.type === 'pointerup'){ lastPointer = { x: e.clientX, y: e.clientY }; const h = hit(e.clientX, e.clientY); if (h) choose(h); } } }
+let pinchRaf = 0;
+function applyPinch(){
+  pinchRaf = 0; if (ptrs.size !== 2) return;
+  const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  if (pinch){ cam.s *= d / pinch.d; cam.phi -= ang - pinch.ang; spinGoal = cam.phi; panDrag = true; lookAround(mx - pinch.mx, my - pinch.my); }
+  pinch = { d, ang, mx, my };
+}
+function endPtr(e){ if (pinchRaf && ptrs.size === 2 && ptrs.has(e.pointerId)){ cancelAnimationFrame(pinchRaf); applyPinch(); }   // a finger lifting: don't lose the last bit of movement
+  if (!ptrs.delete(e.pointerId)) return; if (ptrs.size < 2) pinch = null; if (!ptrs.size) panDrag = false; if (!ptrs.size){ clearTimeout(holdT); const held = holding; holding = false; cv.classList.remove('drag'); if (!held && moveSum < 6 && e.type === 'pointerup'){ lastPointer = { x: e.clientX, y: e.clientY }; const h = hit(e.clientX, e.clientY); if (h) choose(h); } } }
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('pointerleave', () => { tip.classList.remove('on'); hovered = null; cv.classList.remove('over'); });
 const held = new Set();
