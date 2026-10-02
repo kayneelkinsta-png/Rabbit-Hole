@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Learning routes · Rabbit Hole</title>
+  <meta name="description" content="Plan a learning route, explore connected topics, and pause to think with Rabbit Hole.">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="learning/styles.css">
+  <script type="module" src="learning/app.mjs"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to lesson</a>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-orb" aria-hidden="true"></span>Rabbit Hole <span class="brand-sub">/ learning routes</span></a>
+    <span class="badge">Teaching prototype</span>
+  </header>
+  <main id="main" tabindex="-1">
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="storage-warning" class="notice warning" role="alert" hidden></div>
+    <div id="app"><p class="loading">Opening your learning route…</p></div>
+    <noscript>This lesson needs JavaScript to save your responses. You can still <a href="index.html">open Rabbit Hole</a>.</noscript>
+  </main>
+  <footer>Follow a route. Make room for a detour. Leave with your own thinking.</footer>
+</body>
+</html>
