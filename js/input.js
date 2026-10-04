@@ -137,11 +137,52 @@ async function buildRound(cfg, rnd = Math.random, say = () => {}){
 // rounds are built ahead of time in the background, so pressing start is (nearly) instant
 const nextRound = {};
 const roundKey = (daily, level) => daily ? 'daily-' + dayKey() : level;
+/* ─────────── today's challenge: the same route for everyone ─────────── */
+// Routes are published as daily/<date>.json (English titles), so everyone gets the same one; if a day's file is missing, the
+// route is built from today's date as a seed (the same idea, but live Wikipedia can make it differ slightly between players).
+async function translateTitles(titles, code){
+  const j = await getJSON('https://en.wikipedia.org/w/api.php?' + new URLSearchParams({ action: 'query', titles: titles.join('|'), prop: 'langlinks', lllang: code, lllimit: 'max', redirects: '1', format: 'json', formatversion: '2', origin: '*' }));
+  const qy = j && j.query; if (!qy || !qy.pages) return null;
+  const hop = {}; for (const r of (qy.normalized || []).concat(qy.redirects || [])) hop[r.from] = r.to;
+  const to = {}; for (const p of qy.pages) if (p.langlinks && p.langlinks[0]) to[p.title] = p.langlinks[0].title;
+  const out = titles.map(x => { let y = x; for (let i = 0; i < 3 && hop[y]; i++) y = hop[y]; return to[y]; });
+  return out.every(Boolean) ? out : null;
+}
+async function dailyRoute(){
+  try {
+    const r = await fetch('daily/' + dayKey() + '.json', { cache: 'no-cache' }); if (!r.ok) return null;
+    let titles = (await r.json()).route; if (!Array.isArray(titles) || titles.length < 3) return null;
+    if (LANG !== 'en'){ titles = await translateTitles(titles, LANG); if (!titles) return null; }
+    const route = []; for (const ti of titles) route.push(await ready(topic(ti)));
+    return route;
+  } catch (e) { return null; }
+}
+// a challenge link names the start and the goal; the player finds their own way
+function challengeSlot(ch){
+  const slot = { route: null };
+  slot.promise = Promise.all([ready(topic(ch.s)), ready(topic(ch.g))]).then(r => { slot.route = r; return r; }).catch(() => null);
+  return slot;
+}
+function challengeUrl(){
+  const p = { s: game.start.title, g: game.goal.title, d: game.chalLevel || game.level, l: LANG };
+  if (game.clue) p.m = 1; if (game.timed) p.t = 1; if (game.how === 'win' && game.used) p.b = game.used;
+  return SITE + '?' + new URLSearchParams(p);
+}
+// a daily streak: consecutive days with the daily challenge found
+const streakGet = () => { try { const v = JSON.parse(localStorage.getItem('rh-streak') || 'null'); return v && v.last ? v : { last: '', n: 0, best: 0 }; } catch (e) { return { last: '', n: 0, best: 0 }; } };
+const dayBefore = () => new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+const streakNow = () => { const s = streakGet(); return s.last === dayKey() || s.last === dayBefore() ? s.n : 0; };
+function streakWin(){
+  const s = streakGet(), today = dayKey();
+  if (s.last !== today){ s.n = s.last === dayBefore() ? s.n + 1 : 1; s.last = today; s.best = Math.max(s.best || 0, s.n); try { localStorage.setItem('rh-streak', JSON.stringify(s)); } catch (e) {} }
+  return s.n;
+}
 function prepareRound(daily = false, level = game.level){
   const key = roundKey(daily, level);
   if (nextRound[key]) return nextRound[key];
   const cfg = daily ? GAME_LEVELS.adventurer : GAME_LEVELS[level], slot = nextRound[key] = { route: null };
-  slot.promise = buildRound(cfg, daily ? rng(hash('rabbit-hole-' + dayKey())) : Math.random, (m, sub) => { slot.msg = m; slot.sub = sub; })
+  const build = () => buildRound(cfg, daily ? rng(hash('rabbit-hole-' + dayKey())) : Math.random, (m, sub) => { slot.msg = m; slot.sub = sub; });
+  slot.promise = (daily ? dailyRoute().then(r => r || build()) : build())
     .then(r => { slot.route = r; if (!r) delete nextRound[key]; return r; })
     .catch(() => { delete nextRound[key]; return null; });
   return slot;
@@ -149,14 +190,14 @@ function prepareRound(daily = false, level = game.level){
 function openRules(){ $('#rules').classList.add('on'); prepareRound(false, game.level); prepareRound(true); }
 async function startGame(opts = {}){
   $('#rules').classList.remove('on'); $('#result').classList.remove('on'); hideFront(); card.classList.remove('on');
-  const daily = !!opts.daily, cfg = daily ? GAME_LEVELS.adventurer : GAME_LEVELS[game.level];
-  track(daily ? 'game-daily' : 'game-' + game.level);
+  const ch = opts.challenge || null, daily = !!opts.daily, cfg = daily ? GAME_LEVELS.adventurer : GAME_LEVELS[ch ? ch.d : game.level] || GAME_LEVELS[4];
+  track(daily ? 'game-daily' : ch ? 'game-challenge' : 'game-' + game.level);
   $('#now').innerHTML = `<div class="w">${esc(cur.name)}</div><div class="n">${daily ? "setting today's challenge…" : 'setting a goal…'}</div>`;
   const L = $('#loading'), say = (m, sub) => { L.querySelector('.msg').textContent = m; L.querySelector('.sub').textContent = sub || ''; };
   // use the round that's been building in the background (the daily one is kept all day; others are used once)
   const key = roundKey(daily, game.level);
-  const slot = nextRound[key] || prepareRound(daily, game.level);
-  if (!daily) delete nextRound[key];
+  const slot = ch ? challengeSlot(ch) : nextRound[key] || prepareRound(daily, game.level);
+  if (!daily && !ch) delete nextRound[key];
   if (!slot.route){ say(daily ? "loading today's challenge…" : 'populating your starting world…', 'nearly there'); L.classList.add('on'); }
   const myStart = ++gameStartTok;
   const progress = setInterval(() => { if (slot.msg) say(slot.msg, slot.sub); }, 300);   // deep goals take a while: show how far the digging has got
@@ -165,9 +206,9 @@ async function startGame(opts = {}){
   if (myStart !== gameStartTok) return;   // closed with the corner exit while it loaded
   if (!route){ $('#now').innerHTML = `<div class="w">${esc(cur.name)}</div><div class="n">couldn't set a goal just now, try again</div>`; return; }
   for (const T of TOPICS.values()){ T.next = 0; T.jump = null; T.picked = false; }
-  const st = daily ? {} : game.style;   // today's challenge is always normal play, so everyone plays the same game
+  const st = daily ? {} : ch ? { mystery: ch.m, timed: ch.t } : game.style;   // today's challenge is always normal play, so everyone plays the same game
   Object.assign(game, { on: true, over: false, glow: cfg.glow && !st.mystery, route, start: route[0], goal: route[route.length - 1], par: cfg.par, allowed: cfg.par + cfg.spare, used: 0, daily, picks: [], how: null,
-    clue: !!st.mystery, noPic: !!st.mystery && cfg.par >= 10, timed: !!st.timed, limit: st.timed ? limitFor(cfg) : 0, started: false, t0: 0, took: 0, climbCost: !!cfg.climbCost, levelName: daily ? "today's challenge" : DEPTH_NAMES[game.level] });
+    clue: !!st.mystery, noPic: !!st.mystery && cfg.par >= 10, timed: !!st.timed, limit: st.timed ? limitFor(cfg) : 0, started: false, t0: 0, took: 0, climbCost: !!cfg.climbCost, levelName: daily ? "today's challenge" : DEPTH_NAMES[ch ? ch.d : game.level], chalLevel: ch ? ch.d : 0, beat: ch ? ch.b : 0 });
   document.body.classList.add('playing'); setIcon('gameBtn', 'stop', 'give up');
   cv.classList.add('swap'); await new Promise(r => setTimeout(r, 280));
   stack = []; cur = game.start; cam.s = fitS(); cam.phi = spinGoal = 0; falling = diving = false; $('#fall').classList.remove('on'); arriveLater = [cur, t('welcome')];   // shown once the goal tile is closed
@@ -183,6 +224,7 @@ function showGoal(){
   if (!game.on) return;
   if (game.clue) openClue(); else openCard(game.goal.title, 'your goal');
   $('#cardGo').hidden = game.started || game.over;
+  if (game.beat && !game.daily) card.querySelector('.k').textContent = `your goal · beat ${game.beat} world${game.beat === 1 ? '' : 's'}`;
 }
 function startPlay(){
   if (!game.on || game.started) return;
@@ -224,7 +266,10 @@ function winCard(mine){
   $('#wTime').textContent = clock(game.took); $('#wWorlds').textContent = game.used; $('#wBest').textContent = game.par;
   w.querySelector('.route').innerHTML = mine.map((n, i) => `<span${i === mine.length - 1 ? ' class="end"' : ''}>${esc(n)}</span>`).join('<i>›</i>');
   w.querySelector('.badges').innerHTML = [game.levelName, game.clue && 'Mystery', game.timed && 'Timed'].filter(Boolean).map(b => `<span>${esc(b)}</span>`).join('');
-  w.querySelector('.k').textContent = game.daily ? "today's challenge · complete" : 'congratulations';
+  const streak = game.daily ? streakWin() : 0;
+  w.querySelector('.k').textContent = game.daily ? "today's challenge · complete" : game.beat ? (game.used < game.beat ? 'you beat their ' + game.beat + '!' : game.used === game.beat ? 'you matched their ' + game.beat : 'they found it in ' + game.beat) : 'congratulations';
+  if (streak > 1) w.querySelector('.badges').insertAdjacentHTML('beforeend', `<span>🔥 ${streak}-day streak</span>`);
+  $('#daily').textContent = dailyLabel();
   setTimeout(() => { w.classList.remove('gone'); requestAnimationFrame(() => w.classList.add('on')); }, 950);
 }
 function closeWin(){ const w = $('#win'); w.classList.remove('on'); setTimeout(() => w.classList.add('gone'), 450); winFx = null; }
@@ -292,17 +337,19 @@ $('#wHome').onclick = () => { closeWin(); goHome(); };
 $('#win .cx').onclick = () => { closeWin(); exitGame(); };
 $('#cardGo').onclick = startPlay;
 $('#hudClue').onclick = () => openClue();
-function exitGame(){ game.on = false; game.over = false; game.started = false; winFx = null; $('#win').classList.remove('on'); $('#win').classList.add('gone'); BOX.jump = randomWorld(); want(BOX.jump); document.body.classList.remove('playing'); setIcon('gameBtn', 'game', 'the game'); $('#result').classList.remove('on'); for (const T of TOPICS.values()) T.picked = false; showNow(); showHud(); }
+function exitGame(){ chalHold = false; game.on = false; game.over = false; game.started = false; winFx = null; $('#win').classList.remove('on'); $('#win').classList.add('gone'); BOX.jump = randomWorld(); want(BOX.jump); document.body.classList.remove('playing'); setIcon('gameBtn', 'game', 'the game'); $('#result').classList.remove('on'); for (const T of TOPICS.values()) T.picked = false; showNow(); showHud(); }
 $('#modePlay').onclick = () => { hideFront(); openRules(); };
 $('#modeFree').onclick = () => hideFront();
 $('#rulesClose').onclick = () => $('#rules').classList.remove('on');
 $('#go').onclick = () => startGame();
 $('#daily').onclick = () => startGame({ daily: true });
-{ let done = null; try { done = localStorage.getItem('rh-daily-' + dayKey()); } catch (e) {} if (done) $('#daily').textContent = done === 'x' ? "today's challenge (try again)" : `today's challenge (done in ${done})`; }
+function dailyLabel(){ let done = null; try { done = localStorage.getItem('rh-daily-' + dayKey()); } catch (e) {} const sn = streakNow(), fire = sn > 0 ? ` · 🔥${sn}` : ''; return (done ? (done === 'x' ? "today's challenge (try again)" : `today's challenge (done in ${done})`) : "today's challenge") + fire; }
+$('#daily').textContent = dailyLabel();
 // a Wordle-style result: one mark per click, green on the known route, yellow off it, a star for the goal
 function resultText(){
   const onRoute = new Set(game.route.map(T => T.title)), marks = game.picks.map(t => t === '↑' ? '⬆️' : t === game.goal.title ? '⭐' : onRoute.has(t) ? '🟢' : '🟡').join('');
-  return `Rabbit Hole${game.daily ? ' · daily ' + dayKey() : ''}\n${game.start.name} → ${game.goal.name}\n${marks || '·'}  ${game.how === 'win' ? `found in ${game.used} world${game.used === 1 ? '' : 's'}` : 'not found'}${game.took ? ' · ⏱ ' + clock(game.took) : ''} (best route ${game.par})\n${SITE}`;
+  const sn = game.daily && game.how === 'win' ? streakNow() : 0;
+  return `Rabbit Hole${game.daily ? ' · daily ' + dayKey() : ''}\n${game.start.name} → ${game.goal.name}\n${marks || '·'}  ${game.how === 'win' ? `found in ${game.used} world${game.used === 1 ? '' : 's'}` : 'not found'}${game.took ? ' · ⏱ ' + clock(game.took) : ''} (best route ${game.par})${sn > 1 ? '\n🔥 ' + sn + '-day streak' : ''}\n${game.daily ? 'Play today\'s: ' + SITE + '?daily=1' : (game.how === 'win' ? 'Beat me: ' : 'Can you find it? ') + challengeUrl()}`;
 }
 $('#copyRes').onclick = async () => {
   const text = resultText(), b = $('#copyRes');

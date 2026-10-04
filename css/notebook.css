@@ -40,6 +40,7 @@
 #nb footer .note{margin:9px 0 0;font-size:11.5px;opacity:.5}
 body.nbopen #card{right:calc(min(400px,92vw) + 16px)}
 #card .row #cardPin{display:inline-flex;align-items:center;gap:6px}
+#card .row #cardPin[hidden]{display:none}
 #card .row #cardPin svg,#reader header .pin svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #card .row #cardPin.on{background:#ffd98a !important;color:#0b0f1e !important;border-color:#ffd98a}
 #reader header .pin{display:grid;place-items:center;width:34px;height:34px;padding:0;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:50%;cursor:pointer}

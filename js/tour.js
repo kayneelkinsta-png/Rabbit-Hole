@@ -289,10 +289,14 @@ tourTip.querySelector('.back').onclick = () => {
 let seenIntro = false; try { seenIntro = !!localStorage.getItem('rh-intro-seen'); } catch (e) {}
 // every start: the intro, then what Rabbit Hole is, then (if chosen) the tour
 // a topic link (?w=Octopus) skips the intro and the card and goes straight into that world
-if (LINK){ dropPre(); aboutAuto = true; }
+if (CHAL || LINK){ dropPre(); aboutAuto = true; }
 else startIntro();   // the intro opens every start (it's skippable), then the "What is" card
 Promise.race([langReady, new Promise(r => setTimeout(r, 2500))]).then(() => document.fonts.load('20px "Patrick Hand"')).finally(() => {
-  if (LINK){ frame(); enterWorld(LINK.w); setTimeout(() => prepareRound(false, game.level), 6000); track('topic-link'); }
+  if (CHAL){   // a challenge link: land in the start world, then go straight to the goal card
+    frame(); openWorld(CHAL.daily ? randomWorld() : topic(CHAL.s)); track(CHAL.daily ? 'daily-link' : 'challenge-link');
+    const w = setInterval(() => { if (!cur || cur.status !== 'ready' || document.getElementById('loading').classList.contains('on')) return; clearInterval(w); startGame(CHAL.daily ? { daily: true } : { challenge: CHAL }); }, 150);
+  }
+  else if (LINK){ frame(); enterWorld(LINK.w); setTimeout(() => prepareRound(false, game.level), 6000); track('topic-link'); }
   else { openWorld(randomWorld()); frame(); }
 });
 setTimeout(() => $('#hint').classList.add('gone'), 14000);

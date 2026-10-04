@@ -1,7 +1,17 @@
 'use strict';
 // a topic link: ?w=Octopus (&l=es for that language's Wikipedia)
 const LINK = (() => { try { const u = new URLSearchParams(location.search); const w = (u.get('w') || '').trim().slice(0, 200); const l = (u.get('l') || '').toLowerCase(); return w ? { w, l: LANGS.some(x => x[0] === l) ? l : '' } : null; } catch (e) { return null; } })();
+// a challenge link: ?daily=1 plays today's challenge; ?s=Start&g=Goal&d=4[&m=1][&t=1][&b=3] replays a round (d: depth 1-10, m: mystery, t: timed, b: the best to beat)
+const CHAL = (() => { try {
+  const u = new URLSearchParams(location.search), l = (u.get('l') || '').toLowerCase(), lang = LANGS.some(x => x[0] === l) ? l : '';
+  if (u.get('daily')) return { daily: true, l: lang };
+  const s = (u.get('s') || '').trim().slice(0, 200), g = (u.get('g') || '').trim().slice(0, 200); if (!s || !g || s === g) return null;
+  const d = Math.min(10, Math.max(1, parseInt(u.get('d'), 10) || 4)), b = parseInt(u.get('b'), 10);
+  return { s, g, d, l: lang, m: u.get('m') === '1', t: u.get('t') === '1', b: b > 0 && b < 99 ? b : 0 };
+} catch (e) { return null; } })();
+let chalHold = !!CHAL;   // while a challenge link's game is on, the address keeps the challenge (see syncUrl)
 let LANG = (() => {
+  if (CHAL && CHAL.l) return CHAL.l;
   if (LINK && LINK.l) return LINK.l;
   try { const v = localStorage.getItem('rh-lang'); if (v && LANGS.some(l => l[0] === v)) return v; } catch (e) {}
   const nav = (navigator.languages || [navigator.language || 'en']).map(x => String(x).slice(0, 2).toLowerCase());
