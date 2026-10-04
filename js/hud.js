@@ -120,10 +120,10 @@ function showPath(path){
   el.innerHTML = shown.map((n, i) => i === shown.length - 1 ? `<b>${esc(n)}</b>` : esc(n)).join(' › ') + ' ›';
 }
 function openPaper(it){
-  const p = it.paper; cardTok++; stopSay(); showPath(); $('#arrive').classList.remove('on'); clearTimeout(cardDiveT);
+  const p = it.paper; cardTok++; cardCtx = { kind: 'paper', lang: LANG, title: p.title, url: p.doi || p.url, authors: p.authors, more: p.more, year: p.year, venue: p.venue, doi: p.doi, desc: '', trail: trailNames() }; $('#cardPin').hidden = false; nbMarks(); stopSay(); showPath(); $('#arrive').classList.remove('on'); clearTimeout(cardDiveT);
   $('#cardLink').hidden = true; $('#cardGo').hidden = true; $('#cardDig').hidden = true; card.querySelector('img').hidden = true; card.querySelector('img').classList.remove('blur');
   card.classList.add('on'); card.querySelector('.k').textContent = t('paperKicker'); card.querySelector('h2').textContent = p.title;
-  card.querySelector('.d').textContent = [p.authors.join(', ') + (p.more ? ' et al.' : ''), p.year, p.venue].filter(Boolean).join(' · ');
+  card.querySelector('.d').textContent = [authorLine(p), p.year, p.venue].filter(Boolean).join(' · ');
   const b = card.querySelector('.badges'); b.hidden = false; b.replaceChildren();
   const tag = (txt, cls) => { const x = document.createElement('span'); x.textContent = txt; if (cls) x.className = cls; b.append(x); };
   if (p.review) tag(t('review'), 'rv'); tag(t('cites', { n: p.cites.toLocaleString() })); if (p.oa) tag(t('openAccess'), 'oa');
@@ -140,6 +140,7 @@ $('#cardLink').onclick = async () => {
   track('link'); b.classList.add('done'); b.title = b.ariaLabel = t('linkCopied'); setTimeout(() => { b.classList.remove('done'); b.title = b.ariaLabel = t('copyLink'); }, 1600);
 };
 async function openCard(title, kicker, autoDive, path){
+  cardCtx = { kind: 'article', lang: LANG, title, url: wikiUrl(title), trail: (path || stack.concat(cur)).filter(T => T && !T.box).map(T => T.name || T.title) }; $('#cardPin').hidden = game.on; nbMarks();
   $('#cardLink').hidden = game.on; $('#cardLink').dataset.title = title; card.querySelector('.badges').hidden = true; $('#cardWiki').textContent = t('read');
   $('#cardGo').hidden = true; $('#cardDig').classList.remove('win'); stopSay(); showPath(path); $('#arrive').classList.remove('on');   // a tile always takes over from the welcome card
   card.querySelector('img').classList.remove('blur'); $('#cardWiki').hidden = false;
@@ -154,4 +155,5 @@ async function openCard(title, kicker, autoDive, path){
   card.querySelector('h2').textContent = s.title; card.querySelector('.d').textContent = s.description || ''; card.querySelector('p').textContent = s.extract || '';
   if (s.thumbnail){ const im = card.querySelector('img'); im.src = s.thumbnail.source; im.hidden = false; }
   if (s.content_urls) $('#cardWiki').href = s.content_urls.desktop.page;
+  cardCtx.title = s.title || title; cardCtx.desc = s.description || ''; if (s.content_urls) cardCtx.url = s.content_urls.desktop.page; nbMarks();
 }

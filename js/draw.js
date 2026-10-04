@@ -6,13 +6,14 @@ let CX = 0, CY = 0;
 let panX = 0, panY = 0, rawX = 0, rawY = 0, panAt = -1e9, panDrag = false;   // looking around: the view is pulled against a magnet at the centre
 function resize(){ W = innerWidth; H = innerHeight; DPR = Math.min(devicePixelRatio || 1, 2); cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px'; placeCentre(); }
 // the world sits in the middle of whatever space is free between the title and the controls
-let CXt = 0, CYt = 0, AH = 0;
+let CXt = 0, CYt = 0, AH = 0, SIDE = 0;   // SIDE: width taken by the notebook sidebar on wide screens
 function placeCentre(){
   const t = document.getElementById('top'), tr = document.getElementById('trail'), md = document.getElementById('modes');
   let top = t ? t.getBoundingClientRect().bottom : 0, bot = tr ? tr.getBoundingClientRect().top : H;
   if (md && !md.classList.contains('gone')){ const r = md.getBoundingClientRect(); if (r.height && r.top > H * .45) bot = Math.min(bot, r.top - 8); }
   if (bot - top < 200){ top = 0; bot = H; }
-  CXt = W / 2; CYt = (top + bot) / 2; AH = bot - top;
+  SIDE = W > 760 && document.body.classList.contains('nbopen') ? Math.min(400, W * .92) : 0;
+  CXt = (W - SIDE) / 2; CYt = (top + bot) / 2; AH = bot - top;
   if (!CX){ CX = CXt; CY = CYt; }
 }
 resize(); addEventListener('resize', resize); if (window.visualViewport) visualViewport.addEventListener('resize', resize);
@@ -27,7 +28,7 @@ function lookAround(dx, dy){
   const R = .3 * Math.hypot(W, H), r = Math.hypot(rawX, rawY), k = r ? R * Math.tanh(r / R) / r : 0;   // the further you pull, the harder it pulls back
   panX = rawX * k; panY = rawY * k; panAt = performance.now(); CX = CXt + panX; CY = CYt + panY;
 }
-const fitS = () => cur && cur.box ? Math.min(W, H) * .17 / 190 : Math.min(W * .86, AH || H) / 2 / (R0 * 1.2);
+const fitS = () => cur && cur.box ? Math.min(W, H) * .17 / 190 : Math.min((W - SIDE) * .86, AH || H) / 2 / (R0 * 1.2);
 
 function strokeSet(set, css){ for (const q of set){ if (q.f && q.f !== 'none'){ ctx.fillStyle = q.f; ctx.fill(q.p); } if (q.s && q.s !== 'none'){ ctx.strokeStyle = q.s; ctx.lineWidth = clamp(q.w * css, .5, 2.4) / css; ctx.stroke(q.p); } } }
 function drawTopic(T, s, depth){
