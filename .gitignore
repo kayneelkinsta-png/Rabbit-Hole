@@ -6,3 +6,17 @@ launch/
 sounds/*video*.mp3
 sounds/promo-*.mp3
 sounds/Infinite_*.mp3
+node_modules/
+
+# personal files and app-signing material must never be committed
+*.docx
+*.keystore
+*.jks
+keystore.properties
+www/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+*.aab
+*.apk
