@@ -60,8 +60,9 @@ def render(size, ss=2):
             for i in range(3): px[o + i] = max(0, min(255, int(acc[i] / (ss * ss) ** 1 * 255 / 1 + .5)))
     return px
 
-here = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icons')
-os.makedirs(here, exist_ok=True)
-for size, name in [(512, 'icon-512.png'), (192, 'icon-192.png'), (180, 'apple-touch-icon.png'), (48, 'favicon-48.png')]:
-    png(os.path.join(here, name), size, render(size, 2 if size > 100 else 3))
-    print('wrote', name)
+if __name__ == '__main__':
+    here = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icons')
+    os.makedirs(here, exist_ok=True)
+    for size, name in [(512, 'icon-512.png'), (192, 'icon-192.png'), (180, 'apple-touch-icon.png'), (48, 'favicon-48.png')]:
+        png(os.path.join(here, name), size, render(size, 2 if size > 100 else 3))
+        print('wrote', name)

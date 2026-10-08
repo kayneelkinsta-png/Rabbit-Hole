@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Rabbit Hole</string>
+    <string name="title_activity_main">Rabbit Hole</string>
+    <string name="package_name">com.kayneelkins.rabbithole</string>
+    <string name="custom_url_scheme">com.kayneelkins.rabbithole</string>
+</resources>

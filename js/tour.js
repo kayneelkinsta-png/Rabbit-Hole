@@ -315,5 +315,5 @@ if (FEEDBACK_URL){
   sheet.addEventListener('click', e => { if (e.target === sheet) shut(); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && !sheet.hidden) shut(); });
 }
-if (GOAT && location.protocol === 'https:'){ const sc = document.createElement('script'); sc.async = true; sc.src = 'https://gc.zgo.at/count.js'; sc.dataset.goatcounter = `https://${GOAT}.goatcounter.com/count`; document.head.appendChild(sc); }
+if (GOAT && location.protocol === 'https:' && !window.Capacitor){ const sc = document.createElement('script'); sc.async = true; sc.src = 'https://gc.zgo.at/count.js'; sc.dataset.goatcounter = `https://${GOAT}.goatcounter.com/count`; document.head.appendChild(sc); }
 window.__rh = { nextRound, prepareRound, isDry, cam, game, get cur(){ return cur; }, get stack(){ return stack; }, topic, tick, run(n){ for (let i = 0; i < n; i++) tick(); return { cur: cur && cur.name, depth: stack.length, s: +cam.s.toFixed(4), next: cur && nextOf(cur) && nextOf(cur).title, status: cur && cur.status }; }, choose, hit };

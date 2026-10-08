@@ -2,7 +2,7 @@
 // very next open (even from the home screen), and fall back to the last saved copy when there's no signal.
 // Wikipedia, pictures and the 3D library are left alone and go straight to the network.
 const CACHE = 'rh-v2';
-const SHELL = ['./', 'index.html', 'css/app.css', 'js/core.js', 'js/strings.js', 'js/wiki.js', 'js/topics.js', 'js/papers.js', 'js/draw.js', 'js/glass.js', 'js/fx.js', 'js/rabbit.js', 'js/hud.js', 'js/reader.js', 'js/input.js', 'js/tour.js', 'js/notebook.js', 'css/notebook.css', 'intro.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const SHELL = ['./', 'index.html', 'css/app.css', 'js/core.js', 'js/strings.js', 'js/wiki.js', 'js/topics.js', 'js/papers.js', 'js/draw.js', 'js/glass.js', 'js/fx.js', 'js/rabbit.js', 'js/hud.js', 'js/reader.js', 'js/input.js', 'js/tour.js', 'js/notebook.js', 'js/native.js', 'css/notebook.css', 'intro.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();

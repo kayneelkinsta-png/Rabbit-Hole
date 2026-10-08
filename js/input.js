@@ -150,7 +150,7 @@ async function translateTitles(titles, code){
 }
 async function dailyRoute(){
   try {
-    const r = await fetch('daily/' + dayKey() + '.json', { cache: 'no-cache' }); if (!r.ok) return null;
+    const r = await fetch((window.Capacitor ? SITE : '') + 'daily/' + dayKey() + '.json', { cache: 'no-cache' });   // the Android app reads the live site's routes if (!r.ok) return null;
     let titles = (await r.json()).route; if (!Array.isArray(titles) || titles.length < 3) return null;
     if (LANG !== 'en'){ titles = await translateTitles(titles, LANG); if (!titles) return null; }
     const route = []; for (const ti of titles) route.push(await ready(topic(ti)));
@@ -479,4 +479,4 @@ $('#langList').addEventListener('click', e => { const b = e.target.closest('butt
 addEventListener('pointerdown', e => { if (!e.target.closest('#langWrap')) $('#langList').classList.remove('on'); });
 applyStrings();
 // on the live site, a service worker makes sure updates arrive on the next open, even from the home screen
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.Capacitor) navigator.serviceWorker.register('sw.js').catch(() => {});

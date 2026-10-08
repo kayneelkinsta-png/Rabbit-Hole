@@ -132,7 +132,7 @@ function openPaper(it){
   track('paper');
 }
 // topic links: the address of a world is ?w=<title>&l=<language>, so it can be shared, bookmarked or embedded
-const topicUrl = title => (/^(localhost|127\.0\.0\.1|)$/.test(location.hostname) ? location.href.split(/[?#]/)[0] : SITE) + '?' + new URLSearchParams({ w: title, l: LANG });
+const topicUrl = title => (!window.Capacitor && /^(localhost|127\.0\.0\.1|)$/.test(location.hostname) ? location.href.split(/[?#]/)[0] : SITE) + '?' + new URLSearchParams({ w: title, l: LANG });
 function syncUrl(T){ if (game.on || chalHold || !T || T.box || !T.title) return; try { history.replaceState(null, '', '?' + new URLSearchParams({ w: T.title, l: LANG })); } catch (e) {} }
 $('#cardLink').onclick = async () => {
   const b = $('#cardLink'), title = $('#card h2').textContent || b.dataset.title, url = topicUrl(b.dataset.title || title);

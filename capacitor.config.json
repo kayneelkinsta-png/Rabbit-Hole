@@ -1,0 +1,19 @@
+{
+  "appId": "com.kayneelkins.rabbithole",
+  "appName": "Rabbit Hole",
+  "webDir": "www",
+  "backgroundColor": "#05070f",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#05070f",
+      "showSpinner": false
+    }
+  }
+}
