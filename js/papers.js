@@ -12,9 +12,25 @@ function paperFromWork(w){ return ({ id: w.id, title: w.title.replace(/<[^>]+>/g
     abs: abstractOf(w.abstract_inverted_index).slice(0, 1600), topics: (w.topics || []).slice(0, 3).map(x => x.display_name).filter(Boolean),
     pmcid: (((w.ids || {}).pmcid || '').match(/PMC\d+/i) || [''])[0], pmid: (((w.ids || {}).pmid || '').match(/\d+$/) || [''])[0],
     where: (w.locations || []).filter(l => l.is_oa && (l.landing_page_url || l.pdf_url)).slice(0, 4).map(l => ({ u: l.landing_page_url || l.pdf_url, s: (l.source && l.source.display_name) || '' })) }); }   // where else it can be read, free
+// a Wikipedia article → its Wikidata item → the matching OpenAlex concept (when it has one: mostly science and technology topics) →
+// the most-cited reviews and articles that are genuinely about it (concept score 0.5 or more). One cheap query instead of a keyword search.
+async function conceptPapers(T){
+  const j = await q({ action: 'query', titles: T.title, prop: 'pageprops', ppprop: 'wikibase_item', redirects: '1' }).catch(() => null);
+  const pg = j && j.query && j.query.pages && j.query.pages[0], qid = pg && pg.pageprops && pg.pageprops.wikibase_item; if (!qid) return null;
+  const cj = await oaGet('https://api.openalex.org/concepts?filter=wikidata_id:' + qid + '&select=id,display_name'), c = cj && cj.results && cj.results[0]; if (!c) return null;
+  const cid = c.id.replace(/^https?:\/\/openalex\.org\//, '');
+  const wj = await oaGet(OA + '?' + new URLSearchParams({ filter: 'concepts.id:' + cid + ',cited_by_count:>20,has_abstract:true,type:review|article', sort: 'cited_by_count:desc', 'per-page': '50', select: OA_SELECT + ',concepts' }));
+  const about = ((wj && wj.results) || []).filter(w => w.title && (w.concepts || []).some(x => x.id.endsWith('/' + cid) && x.score >= .5));
+  if (about.length < 4) return null;   // too thin: fall back to the keyword search
+  const rows = about.map(paperFromWork);
+  return [...rows.filter(p => p.review), ...rows.filter(p => !p.review)].filter((p, i, a) => a.findIndex(x => x.title.toLowerCase() === p.title.toLowerCase()) === i).slice(0, PAPER_AT.length);
+}
 async function fetchPapers(T){
-  const term = (T.name || T.title).replace(/\s*\(([^)]*)\)/g, ' $1').trim(), ck = 'rh-p7:' + LANG + ':' + term;
+  const term = (T.name || T.title).replace(/\s*\(([^)]*)\)/g, ' $1').trim(), ck = 'rh-p8:' + LANG + ':' + term;
   try { const c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && Date.now() - c.at < 3 * 864e5) return c.list; } catch (e) {}
+  const stash = list => { const put = () => localStorage.setItem(ck, JSON.stringify({ at: Date.now(), list })); try { put(); } catch (e) { try { Object.keys(localStorage).filter(k => k.startsWith('rh-p')).forEach(k => localStorage.removeItem(k)); put(); } catch (e2) {} } };   // storage full: clear old paper lists and try once more
+  const viaConcept = await conceptPapers(T).catch(() => null);
+  if (viaConcept){ stash(viaConcept); return viaConcept; }
   const u = OA + '?' + new URLSearchParams({ search: term, filter: 'cited_by_count:>5,has_abstract:true,type:article|review', 'per-page': '25', select: OA_SELECT });
   if (oaOff) return [];
   const r = await fetch(u); if (r.status === 429){ oaOff = true; return []; }   // keyless daily allowance used up: no more papers this visit
@@ -23,8 +39,7 @@ async function fetchPapers(T){
   const rows = (j.results || []).filter(w => w.title).map(paperFromWork);
   const inTitle = p => words.length && words.some(x => p.title.toLowerCase().includes(x));
   const list = [...rows.filter(inTitle), ...rows.filter(p => !inTitle(p))].filter((p, i, a) => a.findIndex(x => x.title.toLowerCase() === p.title.toLowerCase()) === i).slice(0, PAPER_AT.length);
-  const put = () => localStorage.setItem(ck, JSON.stringify({ at: Date.now(), list }));
-  try { put(); } catch (e) { try { Object.keys(localStorage).filter(k => k.startsWith('rh-p')).forEach(k => localStorage.removeItem(k)); put(); } catch (e2) {} }   // storage full: clear old paper lists and try once more
+  stash(list);
   return list;
 }
 // when a world becomes the one you're in, fetch its papers (once) and fill its reserved places
