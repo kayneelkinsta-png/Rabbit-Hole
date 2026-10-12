@@ -127,7 +127,8 @@ function openPaper(it){
   const b = card.querySelector('.badges'); b.hidden = false; b.replaceChildren();
   const tag = (txt, cls) => { const x = document.createElement('span'); x.textContent = txt; if (cls) x.className = cls; b.append(x); };
   if (p.review) tag(t('review'), 'rv'); tag(t('cites', { n: p.cites.toLocaleString() })); if (p.oa) tag(t('openAccess'), 'oa');
-  card.querySelector('p').textContent = p.abs ? p.abs + (p.abs.length >= 700 ? '…' : '') : '';
+  card.querySelector('p').textContent = p.abs ? p.abs + (p.abs.length >= 1600 ? '…' : '') : '';
+  for (const tp of p.topics || []){ const x = document.createElement('span'); x.textContent = tp; x.className = 'tp'; b.append(x); }
   const a = $('#cardWiki'); a.hidden = false; a.href = p.url; a.textContent = (p.oa ? t('readPaper') : t('viewPaper')) + ' ↗';
   const g = $('#cardAlt'); g.hidden = false; g.href = 'https://scholar.google.com/scholar?q=' + encodeURIComponent(p.title); g.textContent = t('scholar') + ' ↗';   // a way in when a publisher's page won't load
   track('paper');

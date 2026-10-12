@@ -50,6 +50,7 @@ body.glass #card .say:not([hidden]) ~ .k{padding-right:88px}
 #card .badges[hidden]{display:none}
 #card .badges span{font:600 12px/1 -apple-system,"Segoe UI",system-ui,sans-serif;padding:5px 9px;border-radius:99px;background:rgba(255,255,255,.12);color:#fff}
 #card .badges .oa{background:#2f9e6b}#card .badges .rv{background:#8a63d2}
+#card .badges .tp{background:none;border:1px solid rgba(255,255,255,.25);font-weight:500}
 body.glass #card .lnk{right:98px}
 body.glass #card .lnk:not([hidden]) ~ .say:not([hidden]) ~ .k{padding-right:132px}
 body.glass #card .lnk.done{background:#fff;color:#0b0f1e}
