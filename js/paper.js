@@ -3,7 +3,35 @@
 /* Publishers won't let their own pages be shown inside another site, so this page is built from what we can legally read here:
    the paper's details and abstract (OpenAlex, CC0), and, when it's open access in Europe PMC (free to fetch from any site), its
    full text. Everything else is a clear list of places to read it. */
-let paperOpenTok = 0;
+let paperOpenTok = 0, paperStack = [];
+const paperCtxOf = p => ({ kind: 'paper', lang: LANG, title: p.title, url: p.doi || p.url, authors: p.authors, more: p.more, year: p.year, venue: p.venue, doi: p.doi, desc: '', trail: trailNames(), paper: p });
+// who cites a paper, and what it cites: from OpenAlex (cheap, filter queries), loaded when the page opens
+const RELATED = new Map();
+async function oaGet(url){ if (oaOff) return null; const r = await fetch(url).catch(() => null); if (!r) return null; if (r.status === 429){ oaOff = true; return null; } return r.ok ? r.json() : null; }
+async function relatedOf(p){
+  const id = String(p.id || '').replace(/^https?:\/\/openalex\.org\//, ''); if (!/^W\d+$/.test(id)) return { citedBy: [], refs: [], nRefs: 0 };
+  if (RELATED.has(id)) return RELATED.get(id);
+  const prom = (async () => {
+    const [cj, wj] = await Promise.all([
+      oaGet(OA + '?' + new URLSearchParams({ filter: 'cites:' + id, sort: 'cited_by_count:desc', 'per-page': '8', select: OA_SELECT })),
+      oaGet('https://api.openalex.org/works/' + id + '?select=referenced_works'),
+    ]);
+    const refIds = ((wj && wj.referenced_works) || []).map(x => x.replace(/^https?:\/\/openalex\.org\//, '')).filter(x => /^W\d+$/.test(x));
+    let refs = [];
+    if (refIds.length){ const rj = await oaGet(OA + '?' + new URLSearchParams({ filter: 'openalex:' + refIds.slice(0, 50).join('|'), sort: 'cited_by_count:desc', 'per-page': '10', select: OA_SELECT })); refs = ((rj && rj.results) || []).filter(w => w.title).map(paperFromWork); }
+    return { citedBy: ((cj && cj.results) || []).filter(w => w.title).map(paperFromWork), refs, nRefs: refIds.length };
+  })();
+  RELATED.set(id, prom); prom.catch(() => RELATED.delete(id)); return prom;
+}
+function relatedList(title, list, count){
+  const box = paperEl('div', { className: 'rel' }, paperEl('h2', { textContent: title + (count ? ' (' + count.toLocaleString() + ')' : '') }));
+  const ul = paperEl('ul', { className: 'ways rel' });
+  for (const q of list){
+    const a = paperEl('a', { href: q.url, textContent: q.title, dir: 'auto' }); a.addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openPaperPage(q); });
+    ul.append(paperEl('li', null, a, paperEl('div', { className: 'relmeta', textContent: [authorLine(q), q.year, t('cites', { n: q.cites.toLocaleString() })].filter(Boolean).join(' · '), dir: 'auto' })));
+  }
+  box.append(ul); return box;
+}
 const EPMC = 'https://www.ebi.ac.uk/europepmc/webservices/rest';
 
 // JATS (the XML open-access articles come in) → safe DOM. Built with createElement and textContent only, never innerHTML
@@ -58,11 +86,14 @@ async function epmcFullText(p){
 const paperEl = (tag, props, ...kids) => { const e = document.createElement(tag); Object.assign(e, props || {}); for (const k of kids) if (k != null) e.append(k); return e; };
 const paperLink = (href, label) => paperEl('a', { href, target: '_blank', rel: 'noopener', textContent: label + ' ↗' });
 
-async function openPaperPage(p){
+async function openPaperPage(p, push = true){
   const tok = ++paperOpenTok;
+  if (push && (reader.dataset.kind !== 'paper' || !paperStack.length || paperStack[paperStack.length - 1] !== p)) paperStack.push(p);
+  if (reader.dataset.kind !== 'paper') paperStack = [p];
+  cardCtx = paperCtxOf(p);   // the pin button keeps whichever paper is on the page
   readHist = []; reader.dataset.kind = 'paper'; reader.dataset.title = '';
   reader.classList.remove('gone'); requestAnimationFrame(() => reader.classList.add('on'));
-  reader.querySelector('.prev').hidden = true; reader.querySelector('.dive').hidden = true;
+  reader.querySelector('.prev').hidden = paperStack.length < 2; reader.querySelector('.dive').hidden = true;
   reader.querySelector('.t').textContent = t('paperKicker');
   const ext = reader.querySelector('.ext'); ext.href = p.url; ext.textContent = t('fullPaper') + ' ↗';
   rArt.replaceChildren();
@@ -87,6 +118,9 @@ async function openPaperPage(p){
   rArt.append(paperEl('h2', { textContent: t('moreWays') }), ul);
   reader.querySelector('.credit').textContent = t('paperCredit');
   rBody.scrollTop = 0; track('paper-page'); if (typeof nbMarks === 'function') nbMarks();
+  // who cites it and what it cites (filled in when they arrive)
+  const relBox = paperEl('div', { className: 'relbox' }); rArt.append(relBox);
+  relatedOf(p).then(r => { if (tok !== paperOpenTok) return; if (r.citedBy.length) relBox.append(relatedList(t('citedByH'), r.citedBy, p.cites)); if (r.refs.length) relBox.append(relatedList(t('refsListH'), r.refs, r.nRefs)); }).catch(() => {});
   // then the full text, if Europe PMC has it
   const full = await epmcFullText(p).catch(() => null);
   if (tok !== paperOpenTok || reader.dataset.kind !== 'paper') return;

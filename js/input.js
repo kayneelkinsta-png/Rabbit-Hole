@@ -451,7 +451,7 @@ function applyStrings(){
   document.documentElement.lang = LANG;
   document.querySelectorAll('[data-i]').forEach(el => {
     const k = el.getAttribute('data-i');
-    if (k === 'credits') el.innerHTML = t('credits', { wp: '<a href="https://www.wikipedia.org/" target="_blank" rel="noopener">' + t('wiki') + '</a>', three: '<a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a>', el: '<a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a>', ph: '<a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a>' });
+    if (k === 'credits') el.innerHTML = t('credits', { wp: '<a href="https://www.wikipedia.org/" target="_blank" rel="noopener">' + t('wiki') + '</a>', oa: '<a href="https://openalex.org/" target="_blank" rel="noopener">OpenAlex</a>', three: '<a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a>', el: '<a href="https://elevenlabs.io/" target="_blank" rel="noopener">ElevenLabs</a>', ph: '<a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a>' });
     else if (/D$|hook/.test(k)) el.innerHTML = t(k);
     else el.textContent = t(k);
   });

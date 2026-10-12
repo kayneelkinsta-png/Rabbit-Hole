@@ -43,9 +43,10 @@ async function openReader(title, push = true){
   rArt.innerHTML = `<h1>${esc(a.title)}</h1>${sm && sm.description ? `<p class="lede">${esc(sm.description)}</p>` : ''}` + a.html;
   reader.querySelector('.credit').innerHTML = t('credit', { wiki: `<a href="${wikiUrl(a.title)}" target="_blank" rel="noopener">${t('wiki')}</a>`, lic: '<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>' });
 }
-function closeReader(){ reader.classList.remove('on'); readHist = []; reader.dataset.kind = ''; if (typeof paperOpenTok !== 'undefined') paperOpenTok++; setTimeout(() => { if (!reader.classList.contains('on')) reader.classList.add('gone'); }, 380); }
+function closeReader(){ reader.classList.remove('on'); readHist = []; reader.dataset.kind = ''; if (typeof paperOpenTok !== 'undefined'){ paperOpenTok++; paperStack = []; } setTimeout(() => { if (!reader.classList.contains('on')) reader.classList.add('gone'); }, 380); }
 reader.querySelector('.home').onclick = closeReader;
-reader.querySelector('.prev').onclick = () => { readHist.pop(); if (readHist.length) openReader(readHist[readHist.length - 1], false); else closeReader(); };
+reader.querySelector('.prev').onclick = () => { if (reader.dataset.kind === 'paper'){ paperStack.pop(); if (paperStack.length) openPaperPage(paperStack[paperStack.length - 1], false); else closeReader(); return; }
+  readHist.pop(); if (readHist.length) openReader(readHist[readHist.length - 1], false); else closeReader(); };
 reader.querySelector('.dive').onclick = () => { const t = reader.dataset.title || readHist[readHist.length - 1]; closeReader(); card.classList.remove('on'); if (t) start(t); };
 // links inside the article open the next article here too
 let gameLink = null;
