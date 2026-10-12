@@ -57,4 +57,5 @@ rArt.addEventListener('click', e => {
 reader.querySelector('.gback').onclick = () => { reader.querySelector('.gamenote').hidden = true; gameLink = null; closeReader(); };
 reader.querySelector('.gend').onclick = () => { reader.querySelector('.gamenote').hidden = true; exitGame(); reader.querySelector('.dive').hidden = false; if (gameLink) openReader(gameLink); gameLink = null; };
 addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!reader.classList.contains('gone')) closeReader(); else if ($('#rules').classList.contains('on')) $('#rules').classList.remove('on'); else if ($('#about').classList.contains('on')) endOnboard(); });
-$('#cardWiki').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openReader(card.querySelector('h2').textContent); });
+$('#cardWiki').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey || (typeof cardCtx !== 'undefined' && cardCtx && cardCtx.kind === 'paper')) return;   // a paper's link goes to the paper itself, not into the Wikipedia reader
+  e.preventDefault(); openReader(card.querySelector('h2').textContent); });
