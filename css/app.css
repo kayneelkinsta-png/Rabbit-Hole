@@ -47,6 +47,7 @@ body.glass #card .say{position:absolute;top:8px;right:54px;z-index:3;width:40px;
 body.glass #card .say:hover{background:rgba(255,255,255,.18)}
 body.glass #card .say:not([hidden]) ~ .k{padding-right:88px}
 #card .badges{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+#card .badges[hidden]{display:none}
 #card .badges span{font:600 12px/1 -apple-system,"Segoe UI",system-ui,sans-serif;padding:5px 9px;border-radius:99px;background:rgba(255,255,255,.12);color:#fff}
 #card .badges .oa{background:#2f9e6b}#card .badges .rv{background:#8a63d2}
 body.glass #card .lnk{right:98px}
