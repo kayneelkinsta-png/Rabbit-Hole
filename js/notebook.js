@@ -107,7 +107,7 @@ function nbCount(){ const all = NB.items.length, n = nbScope().length; $('#nbBtn
 function nbMarks(){   // the pin buttons show whether what's on screen is already in the notebook
   const c = cardCtx, on = nbHas(c), b = $('#cardPin');
   b.classList.toggle('on', on); b.querySelector('span').textContent = on ? t('nbPinned') : t('nbPin');
-  const r = $('#reader .pin'), rt = reader.dataset.title; r.classList.toggle('on', !!rt && nbHas({ kind: 'article', lang: LANG, title: rt }));
+  const r = $('#reader .pin'), rt = reader.dataset.title; r.classList.toggle('on', reader.dataset.kind === 'paper' ? nbHas(c) : !!rt && nbHas({ kind: 'article', lang: LANG, title: rt }));
 }
 function nbEl(tag, props, ...kids){ const e = document.createElement(tag); Object.assign(e, props || {}); for (const k of kids) if (k != null) e.append(k); return e; }
 // the folder tabs: All, each folder, and a + for a new one; rename and delete for the folder in view
@@ -234,6 +234,12 @@ cardPin.onclick = () => {
 const readerPin = $('#reader .pin');
 readerPin.addEventListener('mousedown', e => e.preventDefault());
 readerPin.onclick = () => {
+  if (reader.dataset.kind === 'paper'){   // a paper's page: keep the paper, or the passage selected in its full text
+    if (!cardCtx || cardCtx.kind !== 'paper') return;
+    const q = nbSelection(rArt);
+    if (!q && nbHas(cardCtx)){ const e = NB.items.find(it => nbSameSource(it, cardCtx)); nbOpen(e && e.id); return; }
+    nbPin(cardCtx, q); nbMarks(); return;
+  }
   const title = reader.dataset.title; if (!title) return;
   const c = { kind: 'article', lang: LANG, title, url: wikiUrl(title), desc: ($('#reader .lede') || {}).textContent || '' };
   const q = nbSelection(rArt);

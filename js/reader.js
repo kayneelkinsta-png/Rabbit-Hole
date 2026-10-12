@@ -28,6 +28,7 @@ async function fetchArticle(title){
 }
 async function openReader(title, push = true){
   if (push) readHist.push(title);
+  reader.dataset.kind = ''; reader.querySelector('.ext').textContent = 'wikipedia.org ↗';
   reader.classList.remove('gone'); requestAnimationFrame(() => reader.classList.add('on'));
   reader.querySelector('.prev').hidden = readHist.length < 2;
   reader.querySelector('.t').textContent = title;
@@ -42,7 +43,7 @@ async function openReader(title, push = true){
   rArt.innerHTML = `<h1>${esc(a.title)}</h1>${sm && sm.description ? `<p class="lede">${esc(sm.description)}</p>` : ''}` + a.html;
   reader.querySelector('.credit').innerHTML = t('credit', { wiki: `<a href="${wikiUrl(a.title)}" target="_blank" rel="noopener">${t('wiki')}</a>`, lic: '<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>' });
 }
-function closeReader(){ reader.classList.remove('on'); readHist = []; setTimeout(() => { if (!reader.classList.contains('on')) reader.classList.add('gone'); }, 380); }
+function closeReader(){ reader.classList.remove('on'); readHist = []; reader.dataset.kind = ''; if (typeof paperOpenTok !== 'undefined') paperOpenTok++; setTimeout(() => { if (!reader.classList.contains('on')) reader.classList.add('gone'); }, 380); }
 reader.querySelector('.home').onclick = closeReader;
 reader.querySelector('.prev').onclick = () => { readHist.pop(); if (readHist.length) openReader(readHist[readHist.length - 1], false); else closeReader(); };
 reader.querySelector('.dive').onclick = () => { const t = reader.dataset.title || readHist[readHist.length - 1]; closeReader(); card.classList.remove('on'); if (t) start(t); };
@@ -57,5 +58,8 @@ rArt.addEventListener('click', e => {
 reader.querySelector('.gback').onclick = () => { reader.querySelector('.gamenote').hidden = true; gameLink = null; closeReader(); };
 reader.querySelector('.gend').onclick = () => { reader.querySelector('.gamenote').hidden = true; exitGame(); reader.querySelector('.dive').hidden = false; if (gameLink) openReader(gameLink); gameLink = null; };
 addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!reader.classList.contains('gone')) closeReader(); else if ($('#rules').classList.contains('on')) $('#rules').classList.remove('on'); else if ($('#about').classList.contains('on')) endOnboard(); });
-$('#cardWiki').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey || (typeof cardCtx !== 'undefined' && cardCtx && cardCtx.kind === 'paper')) return;   // a paper's link goes to the paper itself, not into the Wikipedia reader
+$('#cardWiki').addEventListener('click', e => { if (e.metaKey || e.ctrlKey || e.shiftKey || (typeof cardCtx !== 'undefined' && cardCtx && cardCtx.kind === 'paper')){
+    if (!(e.metaKey || e.ctrlKey || e.shiftKey)){ e.preventDefault(); openPaperPage(cardCtx.paper); }   // a paper opens its own page here; a modifier-click goes to the paper itself
+    return;
+  }
   e.preventDefault(); openReader(card.querySelector('h2').textContent); });

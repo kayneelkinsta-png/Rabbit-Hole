@@ -120,7 +120,7 @@ function showPath(path){
   el.innerHTML = shown.map((n, i) => i === shown.length - 1 ? `<b>${esc(n)}</b>` : esc(n)).join(' › ') + ' ›';
 }
 function openPaper(it){
-  const p = it.paper; cardTok++; cardCtx = { kind: 'paper', lang: LANG, title: p.title, url: p.doi || p.url, authors: p.authors, more: p.more, year: p.year, venue: p.venue, doi: p.doi, desc: '', trail: trailNames() }; $('#cardPin').hidden = false; nbMarks(); stopSay(); showPath(); $('#arrive').classList.remove('on'); clearTimeout(cardDiveT);
+  const p = it.paper; cardTok++; cardCtx = { kind: 'paper', lang: LANG, title: p.title, url: p.doi || p.url, authors: p.authors, more: p.more, year: p.year, venue: p.venue, doi: p.doi, desc: '', trail: trailNames(), paper: p }; $('#cardPin').hidden = false; nbMarks(); stopSay(); showPath(); $('#arrive').classList.remove('on'); clearTimeout(cardDiveT);
   $('#cardLink').hidden = true; $('#cardGo').hidden = true; $('#cardDig').hidden = true; card.querySelector('img').hidden = true; card.querySelector('img').classList.remove('blur');
   card.classList.add('on'); card.querySelector('.k').textContent = t('paperKicker'); card.querySelector('h2').textContent = p.title;
   card.querySelector('.d').textContent = [authorLine(p), p.year, p.venue].filter(Boolean).join(' · ');
@@ -129,8 +129,8 @@ function openPaper(it){
   if (p.review) tag(t('review'), 'rv'); tag(t('cites', { n: p.cites.toLocaleString() })); if (p.oa) tag(t('openAccess'), 'oa');
   card.querySelector('p').textContent = p.abs ? p.abs + (p.abs.length >= 1600 ? '…' : '') : '';
   for (const tp of p.topics || []){ const x = document.createElement('span'); x.textContent = tp; x.className = 'tp'; b.append(x); }
-  const a = $('#cardWiki'); a.hidden = false; a.href = p.url; a.textContent = (p.oa ? t('readPaper') : t('viewPaper')) + ' ↗';
-  const g = $('#cardAlt'); g.hidden = false; g.href = 'https://scholar.google.com/scholar?q=' + encodeURIComponent(p.title); g.textContent = t('scholar') + ' ↗';   // a way in when a publisher's page won't load
+  const a = $('#cardWiki'); a.hidden = false; a.href = p.url; a.textContent = t('readPaper');   // opens the paper's page inside Rabbit Hole (a modifier-click goes to the paper itself)
+  const g = $('#cardAlt'); g.hidden = false; g.href = p.url; g.textContent = t('fullPaper') + ' ↗';   // straight to the publisher or open-access copy
   track('paper');
 }
 // topic links: the address of a world is ?w=<title>&l=<language>, so it can be shared, bookmarked or embedded

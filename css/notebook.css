@@ -72,3 +72,16 @@ body.glass #card .say[hidden]{display:none}
 #nb .topq[hidden]{display:none}
 #nb .item .where{margin-top:10px}
 #nb .item select{max-width:100%;padding:6px 8px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:inherit;font:inherit;font-size:12.5px}
+
+#reader article .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px}
+#reader article .chips span{font:600 12px/1 -apple-system,"Segoe UI",system-ui,sans-serif;padding:6px 10px;border-radius:99px;background:rgba(255,255,255,.1);color:inherit}
+#reader article .chips .oa{background:#2f9e6b;color:#fff}
+#reader article .chips .rv{background:#8a63d2;color:#fff}
+#reader article .chips .tp{background:none;border:1px solid rgba(255,255,255,.25);font-weight:500}
+#reader article ul.ways{list-style:none;padding:0;margin:0 0 20px}
+#reader article ul.ways li{margin:0 0 10px}
+#reader article .ftnote,#reader article .ftnone{font-size:13.5px;opacity:.7}
+#reader article .figcap{font-size:13.5px;opacity:.75;font-style:italic}
+#reader article .tbl{overflow-x:auto;margin:0 0 16px}
+#reader article .tbl table{border-collapse:collapse;font-size:13.5px}
+#reader article .tbl td,#reader article .tbl th{border:1px solid rgba(255,255,255,.2);padding:4px 8px}
