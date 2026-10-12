@@ -12,7 +12,7 @@ function placeCentre(){
   let top = t ? t.getBoundingClientRect().bottom : 0, bot = tr ? tr.getBoundingClientRect().top : H;
   if (md && !md.classList.contains('gone')){ const r = md.getBoundingClientRect(); if (r.height && r.top > H * .45) bot = Math.min(bot, r.top - 8); }
   if (bot - top < 200){ top = 0; bot = H; }
-  SIDE = W > 760 && document.body.classList.contains('nbopen') ? Math.min(400, W * .92) : 0;
+  SIDE = W > 760 && document.body.classList.contains('nbopen') ? Math.min(document.getElementById('nb').offsetWidth || 400, W * .92) : 0;
   CXt = (W - SIDE) / 2; CYt = (top + bot) / 2; AH = bot - top;
   if (!CX){ CX = CXt; CY = CYt; }
 }

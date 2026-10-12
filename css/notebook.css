@@ -2,7 +2,7 @@
 #nbBtn{position:relative}
 #nbBtn .bdg{position:absolute;top:2px;right:0;min-width:17px;height:17px;padding:0 4px;box-sizing:border-box;border-radius:9px;background:#ffd98a;color:#0b0f1e;font:700 11px/17px -apple-system,"Segoe UI",system-ui,sans-serif;text-align:center;font-style:normal;pointer-events:none}
 #nbBtn .bdg:empty{display:none}
-#nb{position:fixed;z-index:45;top:0;right:0;bottom:0;width:min(400px,92vw);display:flex;flex-direction:column;box-sizing:border-box;color:#eef1fb;background:rgba(11,15,30,.95);-webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2);border-left:1px solid rgba(255,255,255,.14);box-shadow:-18px 0 50px rgba(0,0,0,.4);font:15px/1.45 -apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;transform:translateX(104%);visibility:hidden;transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility 0s .32s;touch-action:pan-y}
+#nb{--nbw:min(400px,92vw);position:fixed;z-index:45;top:0;right:0;bottom:0;width:var(--nbw);display:flex;flex-direction:column;box-sizing:border-box;color:#eef1fb;background:rgba(11,15,30,.95);-webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2);border-left:1px solid rgba(255,255,255,.14);box-shadow:-18px 0 50px rgba(0,0,0,.4);font:15px/1.45 -apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;transform:translateX(104%);visibility:hidden;transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility 0s .32s;touch-action:pan-y}
 #nb.on{transform:none;visibility:visible;transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility 0s}
 #nb .grab{display:none}
 #nb header{display:flex;align-items:baseline;gap:10px;padding:18px 62px 8px 20px}
@@ -38,7 +38,9 @@
 #nb footer .acts button:hover:not(:disabled){background:rgba(255,255,255,.18)}
 #nb footer .acts button:disabled{opacity:.35;cursor:default}
 #nb footer .note{margin:9px 0 0;font-size:11.5px;opacity:.5}
+#nb.wide{--nbw:min(780px,92vw)}
 body.nbopen #card{right:calc(min(400px,92vw) + 16px)}
+body.nbopen.nbwide #card{right:calc(min(780px,92vw) + 16px)}
 #card .row #cardPin{display:inline-flex;align-items:center;gap:6px}
 #card .row #cardPin[hidden]{display:none}
 #card .row #cardPin svg,#reader header .pin svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -87,3 +89,31 @@ body.glass #card .say[hidden]{display:none}
 #reader article .tbl td,#reader article .tbl th{border:1px solid rgba(255,255,255,.2);padding:4px 8px}
 #reader article .rel .relmeta{font-size:12.5px;opacity:.65;margin-top:2px}
 #reader article ul.rel li{margin:0 0 12px}
+
+#nb .widebtn{position:absolute;top:14px;right:62px;width:34px;height:34px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:none;color:inherit;opacity:.6;cursor:pointer}
+#nb .widebtn:hover{opacity:1;background:rgba(255,255,255,.1)}
+#nb .widebtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#nb .outline{margin:10px 0 0}
+#nb .outline[hidden]{display:none}
+#nb .outline summary{cursor:pointer;font-size:13px;font-weight:600;opacity:.75;padding:4px 0}
+#nb .draft{width:100%;box-sizing:border-box;resize:vertical;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-size:14.5px;min-height:110px;margin-top:4px}
+#nb .findrow{margin:0 0 10px}
+#nb .findrow[hidden]{display:none}
+#nb .find{width:100%;box-sizing:border-box;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:inherit;font:inherit;font-size:14.5px}
+#nb .types{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+#nb .types button{padding:5px 11px;border-radius:99px;border:1px solid rgba(255,255,255,.2);background:none;color:inherit;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;opacity:.8}
+#nb .types button.on{background:#fff;color:#0b0f1e;border-color:#fff;opacity:1}
+#nb .addown{display:block;width:100%;margin:0 0 12px;padding:9px 12px;border-radius:10px;border:1px dashed rgba(255,255,255,.3);background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;opacity:.85}
+#nb .addown:hover{opacity:1;background:rgba(255,255,255,.06)}
+#nb .addbox{margin:0 0 14px;padding:12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16)}
+#nb .addbox[hidden]{display:none}
+#nb .addbox input,#nb .addbox textarea{display:block;width:100%;box-sizing:border-box;margin:0 0 8px;padding:9px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.25);color:inherit;font:inherit;font-size:14.5px}
+#nb .addbox textarea{resize:vertical;min-height:84px}
+#nb .o-err{margin:0 0 8px;font-size:12.5px;color:#ffb4a8;min-height:0}
+#nb .o-err:empty{display:none}
+#nb .o-row{display:flex;gap:8px}
+#nb .o-row button{padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+#nb .o-row button[type=submit]{background:#fff;color:#0b0f1e;border-color:#fff}
+#nb .item.mine .kind{color:#b9e6c9}
+#nb .item textarea{overflow-y:auto}
+@media (max-width:760px){#nb .widebtn{display:none}}

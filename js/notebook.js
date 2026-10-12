@@ -5,11 +5,11 @@
 const NB_KEY = 'rh-notebook';
 // folders: each holds its own notes and its own question; "All" shows everything. (Version 1 had one list, which becomes the first folder.)
 const NB_ALL = 'all';
-let NB = { v: 2, style: 'apa', folders: [{ id: 'f0', name: '', q: '' }], active: 'f0', pinTo: 'f0', items: [] };
+let NB = { v: 2, style: 'apa', folders: [{ id: 'f0', name: '', q: '', draft: '' }], active: 'f0', pinTo: 'f0', items: [] };
 try {
   const v = JSON.parse(localStorage.getItem(NB_KEY) || 'null');
   if (v && Array.isArray(v.items)){
-    const folders = Array.isArray(v.folders) && v.folders.length ? v.folders.map(f => ({ id: String(f.id), name: String(f.name || '').slice(0, 40), q: String(f.q || '') })) : [{ id: 'f0', name: '', q: v.q || '' }];
+    const folders = Array.isArray(v.folders) && v.folders.length ? v.folders.map(f => ({ id: String(f.id), name: String(f.name || '').slice(0, 40), q: String(f.q || ''), draft: String(f.draft || '') })) : [{ id: 'f0', name: '', q: v.q || '', draft: '' }];
     const ids = new Set(folders.map(f => f.id));
     NB = { v: 2, style: ['apa', 'mla', 'harvard'].includes(v.style) ? v.style : 'apa', folders, active: v.active === NB_ALL || ids.has(v.active) ? v.active : folders[0].id, pinTo: ids.has(v.pinTo) ? v.pinTo : folders[0].id,
       items: v.items.map(it => ({ ...it, folder: ids.has(it.folder) ? it.folder : folders[0].id })) };
@@ -18,6 +18,15 @@ try {
 const nbFolder = id => NB.folders.find(f => f.id === id);
 const nbFolderName = f => f.name || t('nbFolderDefault');
 const nbScope = () => NB.active === NB_ALL ? NB.items : NB.items.filter(it => it.folder === NB.active);
+// finding things in a long notebook: a search box and a filter by type (kept in memory only)
+let nbFind = '', nbType = 'all';
+const nbIsMine = it => it.kind === 'note' || it.kind === 'web';
+const nbSite = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+const nbHay = it => [it.title, it.quote, it.note, it.question, it.desc, (it.authors || []).join(' '), it.venue, (it.trail || []).join(' '), NB.active === NB_ALL ? nbFolderName(nbFolder(it.folder) || NB.folders[0]) : ''].join(' ').toLowerCase();
+function nbShown(){
+  const words = nbFind.toLowerCase().split(/\s+/).filter(Boolean);
+  return nbScope().filter(it => (nbType === 'all' || (nbType === 'mine' ? nbIsMine(it) : it.kind === nbType)) && words.every(w => nbHay(it).includes(w)));
+}
 const nbPinFolder = () => nbFolder(NB.active) ? NB.active : (nbFolder(NB.pinTo) ? NB.pinTo : NB.folders[0].id);
 let nbSaveT = 0;
 function nbSave(now){
@@ -79,8 +88,14 @@ function nbAuthorText(it, style){
 function nbCite(it, style = NB.style){
   const d = new Date(it.at), day = d.getDate(), mon = MONTH[d.getMonth()], yr = d.getFullYear(), mon3 = mon.slice(0, 3);
   const url = it.doi || it.url || '', link = url ? eh(url) : '';
-  const wiki = it.kind !== 'paper', wname = it.lang && it.lang !== 'en' ? `Wikipedia (${eh((LANGS.find(l => l[0] === it.lang) || [0, it.lang])[1])})` : 'Wikipedia';
+  const wiki = it.kind === 'article', wname = it.lang && it.lang !== 'en' ? `Wikipedia (${eh((LANGS.find(l => l[0] === it.lang) || [0, it.lang])[1])})` : 'Wikipedia';
   const title = eh(it.title), dotted = /[.?!]$/.test(it.title) ? title : title + '.', bare = title.replace(/\.$/, '');   // titles that already end in a full stop don't get a second
+  if (it.kind === 'web'){   // a page the person added themselves: title, site and address, as accessed on the day it was saved
+    const site = eh(nbSite(it.url));
+    if (style === 'apa') return `<i>${title}</i>. (n.d.). ${site}. Retrieved ${mon} ${day}, ${yr}, from ${link}`;
+    if (style === 'mla') return `“${dotted}” ${site}, ${link}. Accessed ${day} ${mon3}. ${yr}.`;
+    return `${site} (n.d.) <i>${bare}</i>. Available at: ${link} (Accessed: ${day} ${mon} ${yr}).`;
+  }
   if (wiki){
     if (style === 'apa') return `${wname} contributors. (n.d.). ${dotted} In <i>${wname}</i>. Retrieved ${mon} ${day}, ${yr}, from ${link}`;
     if (style === 'mla') return `“${dotted}” <i>${wname}</i>, Wikimedia Foundation, ${link}. Accessed ${day} ${mon3}. ${yr}.`;
@@ -95,7 +110,7 @@ const nbPlain = h => h.replace(/<\/?i>/g, '').replace(/&amp;/g, '&').replace(/&l
 // one reference per source, in alphabetical order
 function nbRefs(style = NB.style){
   const seen = new Set(), out = [];
-  for (const it of nbScope()){ const k = it.kind + '|' + it.lang + '|' + it.title.toLowerCase(); if (seen.has(k)) continue; seen.add(k); out.push(nbCite(it, style)); }
+  for (const it of nbScope().filter(x => x.kind !== 'note')){ const k = it.kind + '|' + it.lang + '|' + it.title.toLowerCase(); if (seen.has(k)) continue; seen.add(k); out.push(nbCite(it, style)); }
   return out.sort((a, b) => nbPlain(a).localeCompare(nbPlain(b)));
 }
 // in-text hint shown under each source: (Family, Year)
@@ -109,6 +124,19 @@ function nbMarks(){   // the pin buttons show whether what's on screen is alread
   b.classList.toggle('on', on); b.querySelector('span').textContent = on ? t('nbPinned') : t('nbPin');
   const r = $('#reader .pin'), rt = reader.dataset.title; r.classList.toggle('on', reader.dataset.kind === 'paper' ? nbHas(c) : !!rt && nbHas({ kind: 'article', lang: LANG, title: rt }));
 }
+const nbKindLabel = it => it.kind === 'paper' ? t('paperKicker') : it.kind === 'article' ? t('nbArticle') : it.kind === 'web' ? t('nbWebKind') : t('nbNoteKind');
+function nbGrow(ta){ ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, Math.round(innerHeight * .45)) + 'px'; }   // a note box grows as you write
+// the search row and the type filter
+function nbTools(){
+  const sc = nbScope(), n = { all: sc.length, paper: sc.filter(i => i.kind === 'paper').length, article: sc.filter(i => i.kind === 'article').length, mine: sc.filter(nbIsMine).length };
+  if (nbType !== 'all' && !n[nbType]) nbType = 'all';
+  const row = nb.querySelector('.findrow'), box = nb.querySelector('.types'); box.replaceChildren();
+  for (const [k, label] of [['all', 'nbAll'], ['paper', 'nbTypePapers'], ['article', 'nbTypeArticles'], ['mine', 'nbTypeMine']]){
+    if (k !== 'all' && !n[k]) continue;
+    const b = nbEl('button', { type: 'button', textContent: t(label) + ' ' + n[k] }); b.classList.toggle('on', nbType === k); b.onclick = () => { nbType = k; nbRender(); }; box.append(b);
+  }
+  row.hidden = n.all < 2 && !nbFind;
+}
 function nbEl(tag, props, ...kids){ const e = document.createElement(tag); Object.assign(e, props || {}); for (const k of kids) if (k != null) e.append(k); return e; }
 // the folder tabs: All, each folder, and a + for a new one; rename and delete for the folder in view
 function nbTabs(){
@@ -121,7 +149,11 @@ function nbTabs(){
   for (const [c, k] of [['.ren', 'nbRenameFolder'], ['.del', 'nbDeleteFolder']]){ const b = fe.querySelector(c); b.title = t(k); b.setAttribute('aria-label', t(k)); }
   const on = bar.querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
-function nbSyncQ(){ const q = nb.querySelector('.topq'), f = nbFolder(NB.active); q.hidden = !f; q.value = f ? f.q : ''; }
+function nbSyncQ(){
+  const q = nb.querySelector('.topq'), f = nbFolder(NB.active), od = nb.querySelector('.outline'), dr = nb.querySelector('.draft');
+  q.hidden = !f; q.value = f ? f.q : ''; od.hidden = !f; dr.value = f ? (f.draft || '') : ''; od.open = !!(f && f.draft);
+  setTimeout(() => { nbGrow(q); if (od.open) nbGrow(dr); }, 0);
+}
 function nbSelect(id){ NB.active = id; if (nbFolder(id)) NB.pinTo = id; nbSave(true); nbTabs(); nbSyncQ(); nbCount(); nbRender(); }
 function nbNewFolder(){
   const name = (prompt(t('nbFolderPrompt'), '') || '').trim().slice(0, 40); if (!name) return;
@@ -142,21 +174,22 @@ function nbDeleteFolder(){
 }
 function nbRender(flashId){
   const list = nb.querySelector('.list'); list.replaceChildren();
-  const items = nbScope();
-  if (!items.length){ list.append(nbEl('p', { className: 'empty', textContent: t('nbEmpty') })); }
+  nbTools(); const items = nbShown();
+  if (!items.length){ list.append(nbEl('p', { className: 'empty', textContent: nbScope().length ? t('nbNoMatch') : t('nbEmpty') })); }
   for (const it of items){
-    const wrap = nbEl('div', { className: 'item ' + (it.kind === 'paper' ? 'paper' : 'article') });
+    const wrap = nbEl('div', { className: 'item ' + (it.kind === 'paper' ? 'paper' : it.kind === 'article' ? 'article' : 'mine') });
     wrap.dataset.id = it.id;
     wrap.append(nbEl('button', { className: 'rm', type: 'button', title: t('nbRemove'), textContent: '×', onclick: () => { if (!confirm(t('nbConfirm'))) return; NB.items = NB.items.filter(x => x.id !== it.id); nbSave(true); nbCount(); nbMarks(); nbRender(); } }));
-    wrap.append(nbEl('span', { className: 'kind', textContent: it.kind === 'paper' ? t('paperKicker') : t('nbArticle') }));
-    const h = nbEl('h3'); const a = nbEl('a', { href: it.url || '#', target: '_blank', rel: 'noopener', textContent: it.title }); h.append(a); wrap.append(h);
-    const meta = it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : it.desc; if (meta) wrap.append(nbEl('div', { className: 'meta', textContent: meta, dir: 'auto' }));
+    wrap.append(nbEl('span', { className: 'kind', textContent: nbKindLabel(it) + (NB.active === NB_ALL ? ' · ' + nbFolderName(nbFolder(it.folder) || NB.folders[0]) : '') }));
+    if (it.kind === 'note'){ if (it.title) wrap.append(nbEl('h3', { textContent: it.title, dir: 'auto' })); }
+    else { const h = nbEl('h3'); const a = nbEl('a', { href: it.url || '#', target: '_blank', rel: 'noopener', textContent: it.title }); h.append(a); wrap.append(h); }
+    const meta = it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : it.kind === 'web' ? nbSite(it.url) : it.kind === 'note' ? '' : it.desc; if (meta) wrap.append(nbEl('div', { className: 'meta', textContent: meta, dir: 'auto' }));
     if (it.quote) wrap.append(nbEl('blockquote', { textContent: it.quote, dir: 'auto' }));
-    for (const [key, label] of [['note', 'nbInterp'], ['question', 'nbQ']]){
+    for (const [key, label] of [['note', nbIsMine(it) ? 'nbNoteBody' : 'nbInterp'], ['question', 'nbQ']]){
       const id = 'nb-' + key + '-' + it.id;
       wrap.append(nbEl('label', { htmlFor: id, textContent: t(label) }));
-      const ta = nbEl('textarea', { id, value: it[key] || '', rows: 2, dir: 'auto' });
-      ta.addEventListener('input', () => { it[key] = ta.value; nbSave(); });
+      const ta = nbEl('textarea', { id, value: it[key] || '', rows: key === 'note' && nbIsMine(it) ? 4 : 2, dir: 'auto' });
+      ta.addEventListener('input', () => { it[key] = ta.value; nbSave(); nbGrow(ta); }); setTimeout(() => nbGrow(ta), 0);
       wrap.append(ta);
     }
     if (it.trail && it.trail.length) wrap.append(nbEl('div', { className: 'trail', textContent: t('nbFound') + ': ' + it.trail.slice(-4).join(' › '), dir: 'auto' }));
@@ -185,10 +218,11 @@ function nbDocHtml(forFile){
   const style = NB.style, fol = nbFolder(NB.active), parts = [`<h1>${eh(t('nbDoc'))}${fol ? ' · ' + eh(nbFolderName(fol)) : ''}</h1>`];
   if (fol && fol.q.trim()) parts.push(`<p><b>${eh(t('nbTopQ'))}</b><br>${eh(fol.q).replace(/\n/g, '<br>')}</p>`);
   if (!fol) for (const f of NB.folders) if (f.q.trim()) parts.push(`<p><b>${eh(nbFolderName(f))}:</b> ${eh(f.q).replace(/\n/g, '<br>')}</p>`);
+  if (fol && (fol.draft || '').trim()) parts.push(`<h2>${eh(t('nbOutline'))}</h2><p>${eh(fol.draft).replace(/\n/g, '<br>')}</p>`);
   for (const it of nbScope().slice().reverse()){
-    parts.push(`<h2>${eh(it.title)}</h2>${fol ? '' : `<p style="color:#777;font-size:85%">${eh(nbFolderName(nbFolder(it.folder) || NB.folders[0]))}</p>`}<p style="color:#555;font-size:90%">${eh(it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : (it.desc || t('nbArticle')))}</p>`);
+    parts.push(`<h2>${eh(it.title || t('nbNoteKind'))}</h2>${fol ? '' : `<p style="color:#777;font-size:85%">${eh(nbFolderName(nbFolder(it.folder) || NB.folders[0]))}</p>`}<p style="color:#555;font-size:90%">${eh(it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : it.kind === 'web' ? nbSite(it.url) : it.kind === 'note' ? t('nbNoteKind') : (it.desc || t('nbArticle')))}</p>`);
     if (it.quote) parts.push(`<blockquote style="margin:8px 0 8px 12px;padding-left:10px;border-left:3px solid #bbb"><i>${eh(it.quote)}</i> (${eh(nbInText(it))}${it.year ? ', ' + eh(it.year) : ''})</blockquote>`);
-    if (it.note.trim()) parts.push(`<p><b>${eh(t('nbInterp'))}:</b> ${eh(it.note).replace(/\n/g, '<br>')}</p>`);
+    if (it.note.trim()) parts.push(`<p><b>${eh(nbIsMine(it) ? t('nbNoteBody') : t('nbInterp'))}:</b> ${eh(it.note).replace(/\n/g, '<br>')}</p>`);
     if (it.question.trim()) parts.push(`<p><b>${eh(t('nbQ'))}:</b> ${eh(it.question).replace(/\n/g, '<br>')}</p>`);
     if (it.trail && it.trail.length) parts.push(`<p style="color:#777;font-size:85%">${eh(t('nbFound'))}: ${eh(it.trail.slice(-4).join(' › '))}</p>`);
   }
@@ -207,7 +241,34 @@ nb.querySelector('.cx').onclick = nbClose;
 nb.querySelector('.grab').onclick = nbClose;
 $('#nbBtn').onclick = nbToggle;
 addEventListener('keydown', e => { if (e.key === 'Escape' && nb.classList.contains('on') && !$('#reader').classList.contains('on')) nbClose(); });
-nb.querySelector('.topq').addEventListener('input', e => { const f = nbFolder(NB.active); if (f){ f.q = e.target.value; nbSave(); } });
+nb.querySelector('.topq').addEventListener('input', e => { const f = nbFolder(NB.active); if (f){ f.q = e.target.value; nbSave(); nbGrow(e.target); } });
+nb.querySelector('.draft').addEventListener('input', e => { const f = nbFolder(NB.active); if (f){ f.draft = e.target.value; nbSave(); nbGrow(e.target); } });
+nb.querySelector('.outline').addEventListener('toggle', e => { if (e.target.open) nbGrow(nb.querySelector('.draft')); });
+// search
+nb.querySelector('.find').addEventListener('input', e => { nbFind = e.target.value; nbRender(); });
+// your own note or link
+{
+  const form = nb.querySelector('.addbox'), err = form.querySelector('.o-err');
+  nb.querySelector('.addown').onclick = () => { form.hidden = !form.hidden; err.textContent = ''; if (!form.hidden) form.querySelector('.o-title').focus(); };
+  form.querySelector('.o-cancel').onclick = () => { form.hidden = true; form.reset(); err.textContent = ''; };
+  form.addEventListener('input', () => { err.textContent = ''; });
+  form.onsubmit = e => {
+    e.preventDefault();
+    const title = form.querySelector('.o-title').value.trim().slice(0, 200), text = form.querySelector('.o-text').value.trim().slice(0, 20000); let link = form.querySelector('.o-link').value.trim();
+    if (!title && !link && !text){ err.textContent = t('nbOwnEmpty'); return; }
+    if (link){ if (!/^https?:\/\//i.test(link)) link = 'https://' + link; try { new URL(link); } catch (x) { err.textContent = t('nbOwnBadLink'); return; } }
+    const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), kind: link ? 'web' : 'note', lang: LANG, title: title || (link ? nbSite(link) : ''), url: link, desc: '', authors: [], more: false, year: '', venue: '', doi: '',
+      quote: '', note: text, question: '', trail: [], folder: nbPinFolder() };
+    NB.items.unshift(it); nbSave(true); nbCount(); form.hidden = true; form.reset(); nbType = 'all'; nbFind = ''; nb.querySelector('.find').value = ''; nbRender(it.id); track('notebook-own');
+  };
+}
+// a wider notebook for long sessions on a laptop
+{
+  let wide = false; try { wide = localStorage.getItem('rh-nbwide') === '1'; } catch (e) {}
+  const apply = () => { nb.classList.toggle('wide', wide); document.body.classList.toggle('nbwide', wide); setTimeout(placeCentre, 40); };
+  nb.querySelector('.widebtn').onclick = () => { wide = !wide; try { localStorage.setItem('rh-nbwide', wide ? '1' : '0'); } catch (e) {} apply(); };
+  apply();
+}
 nb.querySelector('.fedit .ren').onclick = nbRenameFolder;
 nb.querySelector('.fedit .del').onclick = nbDeleteFolder;
 nb.querySelectorAll('.style button').forEach(b => b.onclick = () => { NB.style = b.dataset.s; nbSave(true); nbStyleBtns(); });
@@ -248,6 +309,6 @@ readerPin.onclick = () => {
 };
 // the strings follow the language
 const nbApply = applyStrings;
-applyStrings = function(){ nbApply.apply(this, arguments); nb.querySelector('.topq').placeholder = t('nbTopQ'); nbTabs(); nbCount(); nbMarks(); };
+applyStrings = function(){ nbApply.apply(this, arguments); nb.querySelector('.topq').placeholder = t('nbTopQ'); nb.querySelector('.widebtn').title = t('nbWide'); nbTabs(); nbCount(); nbMarks(); };
 nb.querySelector('.topq').placeholder = t('nbTopQ');
 nbTabs(); nbSyncQ(); nbCount(); nbMarks();
