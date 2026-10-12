@@ -30,7 +30,11 @@ function endPtr(e){ if (pinchRaf && ptrs.size === 2 && ptrs.has(e.pointerId)){ c
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 cv.addEventListener('pointerleave', () => { tip.classList.remove('on'); hovered = null; cv.classList.remove('over'); });
 const held = new Set();
-addEventListener('keydown', e => { if (e.target.matches('input')) return; if (e.key === ' '){ e.preventDefault(); $('#fall').click(); } else if (e.key === 'Escape') card.classList.remove('on'); else held.add(e.key.toLowerCase()); });
+// keyboard shortcuts (space falls; W, S, Q, E and the arrows zoom and spin) never fire while someone is typing in a box, or with Ctrl, Cmd or Alt held
+const typingIn = el => !!(el && el.closest && el.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
+addEventListener('blur', () => held.clear());
+addEventListener('keydown', e => { if (typingIn(e.target) || e.ctrlKey || e.metaKey || e.altKey) return; if (e.key === ' ' && e.target.closest && e.target.closest('button, a[href], summary, [role="button"]')) return;   // Space on a focused button presses that button
+  if (e.key === ' '){ e.preventDefault(); $('#fall').click(); } else if (e.key === 'Escape') card.classList.remove('on'); else held.add(e.key.toLowerCase()); });
 addEventListener('keyup', e => held.delete(e.key.toLowerCase()));
 function stopFall(){ falling = false; $('#fall').classList.remove('on'); }
 $('#fall').onclick = () => { falling = !falling; $('#fall').classList.toggle('on', falling); };
