@@ -73,7 +73,7 @@ async function openClue(){
   card.querySelector('.d').textContent = maskName(s && s.description || game.goal.desc);
   card.querySelector('p').textContent = maskName(s && s.extract ? s.extract.split(/(?<=\.)\s/).slice(0, 2).join(' ') : '');
   const im = card.querySelector('img'); im.classList.add('blur'); im.hidden = game.noPic || !(s && s.thumbnail); if (!im.hidden) im.src = s.thumbnail.source;
-  $('#cardDig').hidden = true; $('#cardWiki').hidden = true;
+  $('#cardDig').hidden = true; $('#cardWiki').hidden = true; $('#cardAlt').hidden = true;
 }
 // path: the worlds passed through to get here (orb taps only), shown under the kicker
 // read aloud: the device's own voice (free, works offline), in the language you're exploring in
@@ -129,6 +129,7 @@ function openPaper(it){
   if (p.review) tag(t('review'), 'rv'); tag(t('cites', { n: p.cites.toLocaleString() })); if (p.oa) tag(t('openAccess'), 'oa');
   card.querySelector('p').textContent = p.abs ? p.abs + (p.abs.length >= 700 ? '…' : '') : '';
   const a = $('#cardWiki'); a.hidden = false; a.href = p.url; a.textContent = (p.oa ? t('readPaper') : t('viewPaper')) + ' ↗';
+  const g = $('#cardAlt'); g.hidden = false; g.href = 'https://scholar.google.com/scholar?q=' + encodeURIComponent(p.title); g.textContent = t('scholar') + ' ↗';   // a way in when a publisher's page won't load
   track('paper');
 }
 // topic links: the address of a world is ?w=<title>&l=<language>, so it can be shared, bookmarked or embedded
@@ -143,7 +144,7 @@ async function openCard(title, kicker, autoDive, path){
   cardCtx = { kind: 'article', lang: LANG, title, url: wikiUrl(title), trail: (path || stack.concat(cur)).filter(T => T && !T.box).map(T => T.name || T.title) }; $('#cardPin').hidden = game.on; nbMarks();
   $('#cardLink').hidden = game.on; $('#cardLink').dataset.title = title; card.querySelector('.badges').hidden = true; $('#cardWiki').textContent = t('read');
   $('#cardGo').hidden = true; $('#cardDig').classList.remove('win'); stopSay(); showPath(path); $('#arrive').classList.remove('on');   // a tile always takes over from the welcome card
-  card.querySelector('img').classList.remove('blur'); $('#cardWiki').hidden = false;
+  card.querySelector('img').classList.remove('blur'); $('#cardWiki').hidden = false; $('#cardAlt').hidden = true;
   const tok = ++cardTok, dig = $('#cardDig');
   clearTimeout(cardDiveT); dig.classList.remove('counting');
   card.classList.add('on'); card.querySelector('.k').textContent = kicker; dig.hidden = kicker === 'your goal' || kicker === t('randomWorld') || /no clicks left/.test(kicker); dig.textContent = t('diveIn');
