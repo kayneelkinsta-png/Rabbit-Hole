@@ -3,8 +3,22 @@
 /* Saved on this device only (no account). An entry is one source (a Wikipedia article or a paper), optionally one passage
    from it, your interpretation, your question, and the worlds you passed through to reach it. */
 const NB_KEY = 'rh-notebook';
-let NB = { v: 1, q: '', style: 'apa', items: [] };
-try { const v = JSON.parse(localStorage.getItem(NB_KEY) || 'null'); if (v && Array.isArray(v.items)) NB = { v: 1, q: v.q || '', style: ['apa', 'mla', 'harvard'].includes(v.style) ? v.style : 'apa', items: v.items }; } catch (e) {}
+// folders: each holds its own notes and its own question; "All" shows everything. (Version 1 had one list, which becomes the first folder.)
+const NB_ALL = 'all';
+let NB = { v: 2, style: 'apa', folders: [{ id: 'f0', name: '', q: '' }], active: 'f0', pinTo: 'f0', items: [] };
+try {
+  const v = JSON.parse(localStorage.getItem(NB_KEY) || 'null');
+  if (v && Array.isArray(v.items)){
+    const folders = Array.isArray(v.folders) && v.folders.length ? v.folders.map(f => ({ id: String(f.id), name: String(f.name || '').slice(0, 40), q: String(f.q || '') })) : [{ id: 'f0', name: '', q: v.q || '' }];
+    const ids = new Set(folders.map(f => f.id));
+    NB = { v: 2, style: ['apa', 'mla', 'harvard'].includes(v.style) ? v.style : 'apa', folders, active: v.active === NB_ALL || ids.has(v.active) ? v.active : folders[0].id, pinTo: ids.has(v.pinTo) ? v.pinTo : folders[0].id,
+      items: v.items.map(it => ({ ...it, folder: ids.has(it.folder) ? it.folder : folders[0].id })) };
+  }
+} catch (e) {}
+const nbFolder = id => NB.folders.find(f => f.id === id);
+const nbFolderName = f => f.name || t('nbFolderDefault');
+const nbScope = () => NB.active === NB_ALL ? NB.items : NB.items.filter(it => it.folder === NB.active);
+const nbPinFolder = () => nbFolder(NB.active) ? NB.active : (nbFolder(NB.pinTo) ? NB.pinTo : NB.folders[0].id);
 let nbSaveT = 0;
 function nbSave(now){
   clearTimeout(nbSaveT);
@@ -37,13 +51,14 @@ function nbHas(c){ return !!c && NB.items.some(it => nbSameSource(it, c)); }
 // pin something: c is { kind, title, url, lang, authors, more, year, venue, doi, desc }
 function nbPin(c, quote){
   if (!c || game.on) return null;
-  const dup = NB.items.find(it => nbSameSource(it, c) && (it.quote || '') === (quote || ''));
+  const folder = nbPinFolder();
+  const dup = NB.items.find(it => it.folder === folder && nbSameSource(it, c) && (it.quote || '') === (quote || ''));
   if (dup){ nbToast(t('nbAgain'), dup.id); return dup; }
   const first = !NB.items.length;
   const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), kind: c.kind, lang: c.lang, title: c.title, url: c.url, desc: c.desc || '', authors: c.authors || [], more: !!c.more, year: c.year || '', venue: c.venue || '', doi: c.doi || '',
-    quote: quote || '', note: '', question: '', trail: c.trail || trailNames() };
+    quote: quote || '', note: '', question: '', trail: c.trail || trailNames(), folder };
   NB.items.unshift(e); nbSave(true); nbCount(); nbMarks();
-  nbToast(quote || !first ? t('nbSaved') : t('nbSavedTip'), e.id);
+  nbToast(first ? t('nbSavedTip') : NB.folders.length > 1 ? t('nbAddedTo', { name: nbFolderName(nbFolder(folder)) }) : t('nbSaved'), e.id);
   track('notebook-pin');
   if (document.body.classList.contains('nbopen')) nbRender(e.id);
   return e;
@@ -80,7 +95,7 @@ const nbPlain = h => h.replace(/<\/?i>/g, '').replace(/&amp;/g, '&').replace(/&l
 // one reference per source, in alphabetical order
 function nbRefs(style = NB.style){
   const seen = new Set(), out = [];
-  for (const it of NB.items){ const k = it.kind + '|' + it.lang + '|' + it.title.toLowerCase(); if (seen.has(k)) continue; seen.add(k); out.push(nbCite(it, style)); }
+  for (const it of nbScope()){ const k = it.kind + '|' + it.lang + '|' + it.title.toLowerCase(); if (seen.has(k)) continue; seen.add(k); out.push(nbCite(it, style)); }
   return out.sort((a, b) => nbPlain(a).localeCompare(nbPlain(b)));
 }
 // in-text hint shown under each source: (Family, Year)
@@ -88,17 +103,48 @@ function nbInText(it){ const a = (it.authors || []).map(nameParts); if (!a.lengt
 
 /* ─────────── the panel ─────────── */
 const nb = $('#nb');
-function nbCount(){ const n = NB.items.length; $('#nbBtn .bdg').textContent = n ? (n > 99 ? '99+' : n) : ''; nb.querySelector('.cnt').textContent = n ? t('nbN', { n }) : ''; nb.querySelectorAll('.acts button').forEach(b => b.disabled = !n); }
+function nbCount(){ const all = NB.items.length, n = nbScope().length; $('#nbBtn .bdg').textContent = all ? (all > 99 ? '99+' : all) : ''; nb.querySelector('.cnt').textContent = n ? t('nbN', { n }) : ''; nb.querySelectorAll('.acts button').forEach(b => b.disabled = !n); }
 function nbMarks(){   // the pin buttons show whether what's on screen is already in the notebook
   const c = cardCtx, on = nbHas(c), b = $('#cardPin');
   b.classList.toggle('on', on); b.querySelector('span').textContent = on ? t('nbPinned') : t('nbPin');
   const r = $('#reader .pin'), rt = reader.dataset.title; r.classList.toggle('on', !!rt && nbHas({ kind: 'article', lang: LANG, title: rt }));
 }
 function nbEl(tag, props, ...kids){ const e = document.createElement(tag); Object.assign(e, props || {}); for (const k of kids) if (k != null) e.append(k); return e; }
+// the folder tabs: All, each folder, and a + for a new one; rename and delete for the folder in view
+function nbTabs(){
+  const bar = nb.querySelector('.tabs'); bar.replaceChildren();
+  const tab = (id, label) => { const b = nbEl('button', { type: 'button', textContent: label, title: label }); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(NB.active === id)); b.classList.toggle('on', NB.active === id); b.onclick = () => nbSelect(id); bar.append(b); return b; };
+  tab(NB_ALL, t('nbAll'));
+  for (const f of NB.folders) tab(f.id, nbFolderName(f));
+  const add = nbEl('button', { type: 'button', className: 'add', textContent: '+', title: t('nbNewFolder') }); add.setAttribute('aria-label', t('nbNewFolder')); add.onclick = nbNewFolder; nb.querySelectorAll('.tabrow .add').forEach(x => x.remove()); nb.querySelector('.tabrow').insertBefore(add, nb.querySelector('.fedit'));
+  const fe = nb.querySelector('.fedit'); fe.hidden = NB.active === NB_ALL;
+  for (const [c, k] of [['.ren', 'nbRenameFolder'], ['.del', 'nbDeleteFolder']]){ const b = fe.querySelector(c); b.title = t(k); b.setAttribute('aria-label', t(k)); }
+  const on = bar.querySelector('.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+function nbSyncQ(){ const q = nb.querySelector('.topq'), f = nbFolder(NB.active); q.hidden = !f; q.value = f ? f.q : ''; }
+function nbSelect(id){ NB.active = id; if (nbFolder(id)) NB.pinTo = id; nbSave(true); nbTabs(); nbSyncQ(); nbCount(); nbRender(); }
+function nbNewFolder(){
+  const name = (prompt(t('nbFolderPrompt'), '') || '').trim().slice(0, 40); if (!name) return;
+  const f = { id: 'f' + Date.now().toString(36), name, q: '' }; NB.folders.push(f); track('notebook-folder'); nbSelect(f.id);
+}
+function nbRenameFolder(){
+  const f = nbFolder(NB.active); if (!f) return;
+  const name = (prompt(t('nbFolderPrompt'), nbFolderName(f)) || '').trim().slice(0, 40); if (!name) return;
+  f.name = name; nbSave(true); nbTabs(); nbRender();
+}
+function nbDeleteFolder(){
+  const f = nbFolder(NB.active); if (!f) return;
+  if (NB.folders.length < 2){ nbToast(t('nbLastFolder')); return; }
+  const rest = NB.folders.filter(x => x.id !== f.id), n = NB.items.filter(it => it.folder === f.id).length;
+  if (n && !confirm(t('nbDelConfirm', { n, name: nbFolderName(rest[0]) }))) return;
+  NB.items.forEach(it => { if (it.folder === f.id) it.folder = rest[0].id; });
+  NB.folders = rest; if (NB.pinTo === f.id) NB.pinTo = rest[0].id; nbSelect(rest[0].id); nbMarks();
+}
 function nbRender(flashId){
   const list = nb.querySelector('.list'); list.replaceChildren();
-  if (!NB.items.length){ list.append(nbEl('p', { className: 'empty', textContent: t('nbEmpty') })); }
-  for (const it of NB.items){
+  const items = nbScope();
+  if (!items.length){ list.append(nbEl('p', { className: 'empty', textContent: t('nbEmpty') })); }
+  for (const it of items){
     const wrap = nbEl('div', { className: 'item ' + (it.kind === 'paper' ? 'paper' : 'article') });
     wrap.dataset.id = it.id;
     wrap.append(nbEl('button', { className: 'rm', type: 'button', title: t('nbRemove'), textContent: '×', onclick: () => { if (!confirm(t('nbConfirm'))) return; NB.items = NB.items.filter(x => x.id !== it.id); nbSave(true); nbCount(); nbMarks(); nbRender(); } }));
@@ -114,13 +160,21 @@ function nbRender(flashId){
       wrap.append(ta);
     }
     if (it.trail && it.trail.length) wrap.append(nbEl('div', { className: 'trail', textContent: t('nbFound') + ': ' + it.trail.slice(-4).join(' › '), dir: 'auto' }));
+    if (NB.folders.length > 1){   // move this note to another folder
+      const sel = nbEl('select', { id: 'nb-move-' + it.id, title: t('nbMove') }); sel.setAttribute('aria-label', t('nbMove'));
+      for (const f of NB.folders) sel.append(nbEl('option', { value: f.id, textContent: (f.id === it.folder ? '' : t('nbMove') + ' ') + nbFolderName(f), selected: f.id === it.folder }));
+      sel.onchange = () => { it.folder = sel.value; NB.pinTo = nbFolder(it.folder) ? it.folder : NB.pinTo; nbSave(true); nbCount(); nbRender(); };
+      const row = nbEl('div', { className: 'where' }, sel); wrap.append(row);
+    }
     list.append(wrap);
   }
   if (flashId){ const w = list.querySelector(`[data-id="${flashId}"]`); if (w){ w.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); w.classList.add('flash'); } }
 }
 function nbOpen(flashId){
+  const hit = flashId && NB.items.find(it => it.id === flashId);
+  if (hit && NB.active !== NB_ALL && NB.active !== hit.folder){ NB.active = hit.folder; NB.pinTo = hit.folder; nbSave(true); }
   document.body.classList.add('nbopen'); nb.classList.add('on'); nb.setAttribute('aria-hidden', 'false');
-  nbRender(flashId); nbStyleBtns(); setTimeout(placeCentre, 30); track('notebook-open');
+  nbTabs(); nbSyncQ(); nbCount(); nbRender(flashId); nbStyleBtns(); setTimeout(placeCentre, 30); track('notebook-open');
 }
 function nbClose(){ document.body.classList.remove('nbopen'); nb.classList.remove('on'); nb.setAttribute('aria-hidden', 'true'); setTimeout(placeCentre, 30); }
 const nbToggle = () => nb.classList.contains('on') ? nbClose() : nbOpen();
@@ -128,10 +182,11 @@ function nbStyleBtns(){ nb.querySelectorAll('.style button').forEach(b => b.clas
 
 /* ─────────── exporting ─────────── */
 function nbDocHtml(forFile){
-  const style = NB.style, parts = [`<h1>${eh(t('nbDoc'))}</h1>`];
-  if (NB.q.trim()) parts.push(`<p><b>${eh(t('nbTopQ'))}</b><br>${eh(NB.q).replace(/\n/g, '<br>')}</p>`);
-  for (const it of NB.items.slice().reverse()){
-    parts.push(`<h2>${eh(it.title)}</h2><p style="color:#555;font-size:90%">${eh(it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : (it.desc || t('nbArticle')))}</p>`);
+  const style = NB.style, fol = nbFolder(NB.active), parts = [`<h1>${eh(t('nbDoc'))}${fol ? ' · ' + eh(nbFolderName(fol)) : ''}</h1>`];
+  if (fol && fol.q.trim()) parts.push(`<p><b>${eh(t('nbTopQ'))}</b><br>${eh(fol.q).replace(/\n/g, '<br>')}</p>`);
+  if (!fol) for (const f of NB.folders) if (f.q.trim()) parts.push(`<p><b>${eh(nbFolderName(f))}:</b> ${eh(f.q).replace(/\n/g, '<br>')}</p>`);
+  for (const it of nbScope().slice().reverse()){
+    parts.push(`<h2>${eh(it.title)}</h2>${fol ? '' : `<p style="color:#777;font-size:85%">${eh(nbFolderName(nbFolder(it.folder) || NB.folders[0]))}</p>`}<p style="color:#555;font-size:90%">${eh(it.kind === 'paper' ? [authorLine(it), it.year, it.venue].filter(Boolean).join(' · ') : (it.desc || t('nbArticle')))}</p>`);
     if (it.quote) parts.push(`<blockquote style="margin:8px 0 8px 12px;padding-left:10px;border-left:3px solid #bbb"><i>${eh(it.quote)}</i> (${eh(nbInText(it))}${it.year ? ', ' + eh(it.year) : ''})</blockquote>`);
     if (it.note.trim()) parts.push(`<p><b>${eh(t('nbInterp'))}:</b> ${eh(it.note).replace(/\n/g, '<br>')}</p>`);
     if (it.question.trim()) parts.push(`<p><b>${eh(t('nbQ'))}:</b> ${eh(it.question).replace(/\n/g, '<br>')}</p>`);
@@ -152,13 +207,14 @@ nb.querySelector('.cx').onclick = nbClose;
 nb.querySelector('.grab').onclick = nbClose;
 $('#nbBtn').onclick = nbToggle;
 addEventListener('keydown', e => { if (e.key === 'Escape' && nb.classList.contains('on') && !$('#reader').classList.contains('on')) nbClose(); });
-nb.querySelector('.topq').value = NB.q;
-nb.querySelector('.topq').addEventListener('input', e => { NB.q = e.target.value; nbSave(); });
+nb.querySelector('.topq').addEventListener('input', e => { const f = nbFolder(NB.active); if (f){ f.q = e.target.value; nbSave(); } });
+nb.querySelector('.fedit .ren').onclick = nbRenameFolder;
+nb.querySelector('.fedit .del').onclick = nbDeleteFolder;
 nb.querySelectorAll('.style button').forEach(b => b.onclick = () => { NB.style = b.dataset.s; nbSave(true); nbStyleBtns(); });
 nb.querySelector('.copyrefs').onclick = e => { const r = nbRefs(); nbCopy(r.map(nbPlain).join('\n\n'), r.map(x => `<p>${x}</p>`).join(''), e.currentTarget); track('notebook-refs'); };
 nb.querySelector('.copydoc').onclick = e => { const body = nbDocHtml(false); nbCopy(body.replace(/<br>/g, '\n').replace(/<\/(p|h1|h2|blockquote)>/g, '\n\n').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), body, e.currentTarget); track('notebook-copydoc'); };
 nb.querySelector('.word').onclick = () => {
-  const a = nbEl('a', { href: URL.createObjectURL(new Blob(['﻿', nbDocHtml(true)], { type: 'application/msword' })), download: 'rabbit-hole-notes.doc' });
+  const a = nbEl('a', { href: URL.createObjectURL(new Blob(['﻿', nbDocHtml(true)], { type: 'application/msword' })), download: 'rabbit-hole-' + (nbFolder(NB.active) ? nbFolderName(nbFolder(NB.active)).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'notes' : 'notes') + '.doc' });
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); track('notebook-word');
 };
 nb.querySelector('.print').onclick = () => {
@@ -186,6 +242,6 @@ readerPin.onclick = () => {
 };
 // the strings follow the language
 const nbApply = applyStrings;
-applyStrings = function(){ nbApply.apply(this, arguments); nb.querySelector('.topq').placeholder = t('nbTopQ'); nbCount(); nbMarks(); };
+applyStrings = function(){ nbApply.apply(this, arguments); nb.querySelector('.topq').placeholder = t('nbTopQ'); nbTabs(); nbCount(); nbMarks(); };
 nb.querySelector('.topq').placeholder = t('nbTopQ');
-nbCount(); nbMarks();
+nbTabs(); nbSyncQ(); nbCount(); nbMarks();
