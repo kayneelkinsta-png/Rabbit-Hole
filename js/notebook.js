@@ -58,9 +58,9 @@ const nbSameSource = (it, c) => it.kind === c.kind && it.lang === c.lang && it.t
 function nbHas(c){ return !!c && NB.items.some(it => nbSameSource(it, c)); }
 
 // pin something: c is { kind, title, url, lang, authors, more, year, venue, doi, desc }
-function nbPin(c, quote){
+function nbPin(c, quote, folderId){
   if (!c || game.on) return null;
-  const folder = nbPinFolder();
+  const folder = nbFolder(folderId) ? folderId : nbPinFolder(); NB.pinTo = folder;
   const dup = NB.items.find(it => it.folder === folder && nbSameSource(it, c) && (it.quote || '') === (quote || ''));
   if (dup){ nbToast(t('nbAgain'), dup.id); return dup; }
   const first = !NB.items.length;
@@ -237,6 +237,10 @@ async function nbCopy(text, html, btn){
   } catch (e) { nbToast('⚠ ' + (e && e.message || 'copy failed')); return; }
   const old = btn.textContent; btn.textContent = t('nbCopied') + ' ✓'; setTimeout(() => btn.textContent = old, 1500);
 }
+{
+  const foot = nb.querySelector('footer'), tg = foot.querySelector('.citetoggle'), panel = foot.querySelector('.citepanel');
+  tg.onclick = () => { const open = panel.hidden; panel.hidden = !open; foot.classList.toggle('open', open); tg.setAttribute('aria-expanded', String(open)); if (open) setTimeout(() => panel.scrollIntoView({ block: 'nearest' }), 30); };
+}
 nb.querySelector('.cx').onclick = nbClose;
 nb.querySelector('.grab').onclick = nbClose;
 $('#nbBtn').onclick = nbToggle;
@@ -283,6 +287,33 @@ nb.querySelector('.print').onclick = () => {
   f.srcdoc = nbDocHtml(true); f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 60000); }; track('notebook-pdf');
 };
 
+// the folder picker: opens beside the "Add to notebook" button; the last folder used comes first
+let nbPickEl = null;
+function nbPickOutside(e){ if (nbPickEl && !nbPickEl.contains(e.target)) nbPickClose(); }
+function nbPickClose(){ if (nbPickEl){ nbPickEl.remove(); nbPickEl = null; } document.removeEventListener('pointerdown', nbPickOutside, true); }
+function nbPick(anchor, onPick){
+  nbPickClose();
+  const box = nbEl('div', { className: 'nbpick' }); box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', t('nbAddTo'));
+  box.append(nbEl('div', { className: 'pt', textContent: t('nbAddTo') }));
+  const last = nbPinFolder();
+  for (const f of [...NB.folders].sort((a, b) => (b.id === last) - (a.id === last))){
+    const n = NB.items.filter(i => i.folder === f.id).length;
+    const b = nbEl('button', { type: 'button', className: f.id === last ? 'on' : '' }, nbEl('span', { textContent: nbFolderName(f) }), nbEl('small', { textContent: String(n) }));
+    b.onclick = () => { nbPickClose(); onPick(f.id); }; box.append(b);
+  }
+  const row = nbEl('div', { className: 'newf' }), inp = nbEl('input', { type: 'text', maxLength: 40, placeholder: t('nbFolderPrompt') }), go = nbEl('button', { type: 'button', textContent: t('nbCreateAdd') });
+  inp.setAttribute('aria-label', t('nbNewFolder'));
+  const make = () => { const name = inp.value.trim().slice(0, 40); if (!name){ inp.focus(); return; } const f = { id: 'f' + Date.now().toString(36), name, q: '', draft: '' }; NB.folders.push(f); nbSave(true); nbTabs(); nbPickClose(); onPick(f.id); track('notebook-folder'); };
+  go.onclick = make; inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); make(); } if (e.key === 'Escape'){ e.stopPropagation(); nbPickClose(); } });
+  row.append(inp, go); box.append(row);
+  document.body.append(box); nbPickEl = box;
+  const r = anchor.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight;   // below the button, or above it when there's no room; always on screen
+  let y = r.bottom + 6; if (y + h > innerHeight - 8) y = Math.max(8, r.top - h - 6);
+  box.style.left = Math.min(Math.max(8, r.left), innerWidth - w - 8) + 'px'; box.style.top = y + 'px';
+  setTimeout(() => document.addEventListener('pointerdown', nbPickOutside, true), 0);
+}
+addEventListener('keydown', e => { if (e.key === 'Escape' && nbPickEl){ e.stopPropagation(); nbPickClose(); } }, true);
+
 // the pin buttons: on a tile, and in the article reader
 const cardPin = $('#cardPin');
 cardPin.addEventListener('mousedown', e => e.preventDefault());   // keep the person's text selection
@@ -290,7 +321,7 @@ cardPin.onclick = () => {
   if (!cardCtx) return;
   const q = nbSelection($('#card'));
   if (!q && nbHas(cardCtx)){ const e = NB.items.find(it => nbSameSource(it, cardCtx)); nbOpen(e && e.id); return; }
-  nbPin(cardCtx, q); nbMarks();
+  const ctx = cardCtx; nbPick(cardPin, folder => { nbPin(ctx, q, folder); nbMarks(); });   // the passage is taken now; the folder is chosen next
 };
 const readerPin = $('#reader .pin');
 readerPin.addEventListener('mousedown', e => e.preventDefault());
@@ -299,13 +330,13 @@ readerPin.onclick = () => {
     if (!cardCtx || cardCtx.kind !== 'paper') return;
     const q = nbSelection(rArt);
     if (!q && nbHas(cardCtx)){ const e = NB.items.find(it => nbSameSource(it, cardCtx)); nbOpen(e && e.id); return; }
-    nbPin(cardCtx, q); nbMarks(); return;
+    const ctx = cardCtx; nbPick(readerPin, folder => { nbPin(ctx, q, folder); nbMarks(); }); return;
   }
   const title = reader.dataset.title; if (!title) return;
   const c = { kind: 'article', lang: LANG, title, url: wikiUrl(title), desc: ($('#reader .lede') || {}).textContent || '' };
   const q = nbSelection(rArt);
   if (!q && nbHas(c)){ const e = NB.items.find(it => nbSameSource(it, c)); nbOpen(e && e.id); return; }
-  nbPin(c, q); nbMarks();
+  nbPick(readerPin, folder => { nbPin(c, q, folder); nbMarks(); });
 };
 // the strings follow the language
 const nbApply = applyStrings;

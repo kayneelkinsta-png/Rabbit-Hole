@@ -117,3 +117,20 @@ body.glass #card .say[hidden]{display:none}
 #nb .item.mine .kind{color:#b9e6c9}
 #nb .item textarea{overflow-y:auto}
 @media (max-width:760px){#nb .widebtn{display:none}}
+#nb footer{padding:4px 20px calc(8px + env(safe-area-inset-bottom))}
+#nb footer .citetoggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border:0;background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;opacity:.85}
+#nb footer .citetoggle:hover{opacity:1}
+#nb footer .citetoggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(180deg);transition:transform .2s}
+#nb footer.open .citetoggle svg{transform:none}
+#nb footer .citepanel{padding:2px 0 4px}
+#nb footer .citepanel[hidden]{display:none}
+.nbpick{position:fixed;z-index:80;width:min(290px,calc(100vw - 16px));box-sizing:border-box;padding:8px;border-radius:14px;background:rgba(12,16,30,.98);color:#eef1fb;border:1px solid rgba(255,255,255,.22);box-shadow:0 18px 50px rgba(0,0,0,.55);font:14px/1.35 -apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif}
+.nbpick .pt{padding:4px 8px 6px;font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;opacity:.6}
+.nbpick button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px;border:0;border-radius:9px;background:none;color:inherit;font:inherit;font-size:14.5px;text-align:left;cursor:pointer}
+.nbpick button:hover{background:rgba(255,255,255,.1)}
+.nbpick button.on{background:rgba(255,217,138,.16)}
+.nbpick button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nbpick button small{opacity:.55;font-size:12px}
+.nbpick .newf{display:flex;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.14)}
+.nbpick .newf input{flex:1;min-width:0;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:inherit;font:inherit;font-size:14px}
+.nbpick .newf button{width:auto;flex:none;padding:8px 12px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);font-size:13px;font-weight:600}
