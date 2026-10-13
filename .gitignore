@@ -20,3 +20,4 @@ android/.gradle/
 android/local.properties
 *.aab
 *.apk
+qa-report.json

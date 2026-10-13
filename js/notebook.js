@@ -66,7 +66,8 @@ function nbPin(c, quote, folderId){
   const first = !NB.items.length;
   const e = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), kind: c.kind, lang: c.lang, title: c.title, url: c.url, desc: c.desc || '', authors: c.authors || [], more: !!c.more, year: c.year || '', venue: c.venue || '', doi: c.doi || '',
     quote: quote || '', note: '', question: '', trail: c.trail || trailNames(), folder };
-  NB.items.unshift(e); nbSave(true); nbCount(); nbMarks();
+  NB.items.unshift(e); if (NB.active !== NB_ALL) NB.active = folder;   // the notebook then opens on the folder you just saved into
+  nbSave(true); nbTabs(); nbSyncQ(); nbCount(); nbMarks();
   nbToast(first ? t('nbSavedTip') : NB.folders.length > 1 ? t('nbAddedTo', { name: nbFolderName(nbFolder(folder)) }) : t('nbSaved'), e.id);
   track('notebook-pin');
   if (document.body.classList.contains('nbopen')) nbRender(e.id);
