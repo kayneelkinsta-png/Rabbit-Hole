@@ -171,8 +171,10 @@ function draw3(time, dt){
   }
   if (b) b.hole.visible = !childBuilt;
   // photos: ask for the biggest orbs' pictures, and pin them in as they arrive
-  if (b && time - imgT > .8){ imgT = time; const now = performance.now(); b.orbs.slice(0, 70).forEach((o, k) => { o.it.lastPx = Math.max(o.it.lastPx || 0, 90 - k); o.it.seen = now; wantImg(o.it); }); }
-  if (b){ let n = 0; for (const o of b.orbs){ if (o.photo === null && o.it.bmp){ addPhoto(o); if (++n >= 4) break; } } }
+  // pictures: ask for the biggest orbs' photos (this world's, and the next world's so it is already dressed when you arrive) and pin them in as they arrive
+  const dress = [[b, 70], [childBuilt, 45]];
+  if (time - imgT > .8){ imgT = time; const now = performance.now(); for (const [x, n] of dress) if (x) x.orbs.slice(0, n).forEach((o, k) => { o.it.lastPx = Math.max(o.it.lastPx || 0, 90 - k); o.it.seen = now; wantImg(o.it); }); }
+  { let n = 0; for (const [x, cap] of dress) if (x) for (const o of x.orbs.slice(0, cap)){ if (o.photo === null && o.it.bmp){ addPhoto(o); if (++n >= 4) break; } } }
 
   // zoom: S is exactly how much bigger than its resting size this world is drawn, so the next world (in the hole at 1/K) is
   // S/K and the hand-over when cam.s drops by K changes nothing on screen. Near the hole the view slides from the middle
